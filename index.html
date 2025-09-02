@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>marius' epic budsjettkalkulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1 id="mainTitle">marius' epic budsjettkalkulator</h1>
+
+    <div class="header">
+        <div id="dateDisplay"></div>
+        <div id="timeDisplay"></div>
+        <button id="helpBtn" class="help-btn">+</button>
+    </div>
+
+    <div class="inputs">
+        <input type="text" id="desc" placeholder="beskrivelse">
+        <input type="number" id="amount" placeholder="beløp">
+        <input type="text" id="date" placeholder="dato">
+        <button id="addEntryBtn">legg til</button>
+    </div>
+
+    <div class="sortControls">
+        <label for="sortSelect">sort:</label>
+        <select id="sortSelect">
+            <option value="date">dato</option>
+            <option value="amount">beløp</option>
+            <option value="desc">beskrivelse</option>
+        </select>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>dato</th>
+                <th>beskrivelse</th>
+                <th>beløp</th>
+            </tr>
+        </thead>
+        <tbody id="entryTableBody"></tbody>
+    </table>
+
+    <div id="sluttsum" class="til-overs" style="display:none">til overs: <span id="tilOversAmount">0.00</span> kr</div>
+
+</div>
+
+<div class="popup" id="popup">
+    <div class="popup-content">
+        <h2>hvordan bruke kalkulatoren</h2>
+        <p>fyll inn beskrivelse, beløp og dato (dd eller dd mmm). trykk enter eller "legg til". listen sorteres automatisk etter dato. "til overs" viser saldo etter siste oppføring.</p>
+        <button id="closePopupBtn">lukk</button>
+    </div>
+</div>
+
+<script src="utils.js"></script>
+<script src="base.js"></script>
+</body>
+</html>

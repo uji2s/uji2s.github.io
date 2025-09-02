@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marius’ Budsjettkalkulator</title>
+<style>
+body { font-family: Arial; margin:0; padding:0; background:#121212; color:#f1f1f1; }
+header { text-align:center; padding:10px; background:#1f1f1f; position:sticky; top:0; }
+h1{ margin:5px; } #clock{ font-size:14px; color:#bbb; }
+main{ padding:15px; }
+input, button, select{ padding:8px; margin:5px 0; border:none; border-radius:4px; }
+input{ width:100%; box-sizing:border-box; }
+button{ background:#333; color:white; cursor:pointer; }
+button:hover{ background:#555; }
+table{ width:100%; border-collapse: collapse; margin-top:10px; }
+th, td{ border-bottom:1px solid #444; padding:8px; text-align:left; }
+.negative{ color:#ff6961; }
+.positive{ color:#77dd77; }
+.tabs{ margin-top:15px; }
+.tab{ display:inline-block; padding:10px; cursor:pointer; background:#1f1f1f; margin-right:5px; border-radius:4px 4px 0 0; }
+.tab.active{ background:#333; }
+.tab-content{ display:none; background:#1a1a1a; padding:15px; }
+.tab-content.active{ display:block; }
+#popup{ position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; display:none; }
+#popup-content{ background:#222; padding:20px; border-radius:10px; max-width:400px; }
+#popup button{ margin-top:10px; }
+.red-zone{ background:#551111; }
+.near-due{ background:#aa3311; }
+</style>
+</head>
+<body>
+<header>
+<h1>Marius’ Budsjettkalkulator</h1>
+<div id="clock"></div>
+</header>
+<main>
+<h2>Legg til inntekt/utgift</h2>
+<input type="text" id="date" placeholder="Dato (01.09 / 1 sep / 1. september)">
+<input type="text" id="desc" placeholder="Beskrivelse">
+<input type="text" id="amount" placeholder="Beløp (eks: 1200 eller -500)">
+<input type="text" id="category" placeholder="Kategori (valgfri)">
+<button id="toggleExpense">Utgift?</button>
+<button onclick="addEntry()">Legg til</button>
+<button onclick="togglePro()">Pro Mode</button>
+
+<div class="tabs">
+<div class="tab active" onclick="showTab('oversikt')">Oversikt</div>
+<div class="tab" onclick="showTab('detaljert')">Detaljert utskrift</div>
+<div class="tab" onclick="showTab('saldo')">Saldo fremover</div>
+</div>
+
+<div id="oversikt" class="tab-content active">
+<table id="entries">
+<thead><tr><th>Dato</th><th>Beskrivelse</th><th>Beløp</th><th>Kategori</th><th>Handling</th></tr></thead>
+<tbody></tbody>
+</table>
+<h3>Sluttsum: <span id="total">0.00</span> kr</h3>
+</div>
+
+<div id="detaljert" class="tab-content">
+<div id="detailedOutput"></div>
+</div>
+
+<div id="saldo" class="tab-content">
+<div id="futureOutput"></div>
+</div>
+
+<button onclick="exportPNG()">Eksporter til PNG</button>
+<button onclick="exportCSV()">Eksporter til CSV</button>
+<button onclick="exportNotes()">Eksporter til Notater</button>
+<button onclick="shareURL()">Del</button>
+<button onclick="openHelp()">Hva betyr hva?</button>
+
+<div id="popup">
+<div id="popup-content">
+<h2>Hva betyr hva?</h2>
+<p>💰 Legg inn inntekter og utgifter med dato, beskrivelse, beløp og valgfri kategori.</p>
+<ul>
+<li>Beløp: positive tall = inntekt, negative = utgift. «Utgift?» tvinger minus.</li>
+<li>Dato: 01.09, 1 sep, 01 september → automatisk format.</li>
+<li>Kategori: valgfri, brukes til filtrering og oversikt.</li>
+<li>Tabellen lar deg redigere, fjerne eller duplisere poster (+14d).</li>
+<li>Detaljert utskrift viser saldo etter hver betaling og rest.</li>
+<li>Pro Mode viser avanserte funksjoner som «Hva hvis» og saldo fremover.</li>
+</ul>
+<button onclick="closeHelp()">OK, skjønner</button>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+let entries = [];
+let forceExpense = false;
+let proMode = false;
+
+// ---- LocalStorage load ----
+if(localStorage.getItem("entries")) entries=JSON.parse(localStorage.getItem("entries"));
+render();
+
+// ---- Clock ----
+function updateClock(){ document.getElementById("clock").textContent = new Date().toLocaleString(); }
+setInterval(updateClock,1000); updateClock();
+
+// ---- Tabs ----
+function showTab(id){
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+document.querySelector('.tab:nth-child('+(id==='oversikt'?1:id==='detaljert'?2:3)+')').classList.add('active');
+document.getElementById(id).classList.add('active');
+if(id==="detaljert") renderDetailed();
+if(id==="saldo") renderFuture();
+}
+
+// ---- Parse/format date ----
+function parseDate(input){
+const months={"jan":0,"januar":0,"feb":1,"februar":1,"mar":2,"mars":2,"apr":3,"april":3,"mai":4,"jun":5,"juni":5,"jul":6,"juli":6,"aug":7,"august":7,"sep":8,"september":8,"okt":9,"oktober":9,"nov":10,"november":10,"des":11,"desember":11};
+input=input.toLowerCase().replace(/\./g," ").trim();
+const parts=input.split(/\s+/);
+let day=parseInt(parts[0]);
+if(isNaN(day)) return null;
+let month=parts[1]?months[parts[1]]!==undefined?months[parts[1]]:parseInt(parts[1])-1:new Date().getMonth();
+let year=parts[2]?parseInt(parts[2]):new Date().getFullYear();
+if(year<100) year+=2000;
+return new Date(year,month,day);
+}
+function formatDate(d){ return d.toLocaleDateString("no-NO",{day:"2-digit",month:"2-digit",year:"2-digit"}); }
+
+// ---- Add entry ----
+function addEntry(){
+let dateInput=document.getElementById("date").value;
+let desc=document.getElementById("desc").value||"-";
+let category=document.getElementById("category").value||"-";
+let amount=parseFloat(document.getElementById("amount").value.replace(",","."));
+let d=parseDate(dateInput);
+if(!d||isNaN(amount)){ alert("Ugyldig input"); return; }
+if(forceExpense&&amount>0) amount=-amount;
+entries.push({date:d,desc,amount,category});
+forceExpense=false;
+document.getElementById("toggleExpense").style.background="#333";
+render();
+saveStorage();
+}
+
+// ---- Render ----
+function render(){
+entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
+const tbody=document.querySelector("#entries tbody");
+tbody.innerHTML="";
+let total=0;
+entries.forEach((e,i)=>{
+total+=e.amount;
+let tr=document.createElement("tr");
+let daysToDue=Math.ceil((new Date(e.date)-new Date())/(1000*60*60*24));
+tr.className=(daysToDue<=3?"near-due":"")+(total<150?" red-zone":"");
+tr.innerHTML=`<td>${formatDate(e.date)}</td>
+<td contenteditable="true" onblur="editDesc(${i},this.textContent)">${e.desc}</td>
+<td contenteditable="true" onblur="editAmount(${i},this.textContent)" class="${e.amount<0?'negative':'positive'}">${e.amount.toFixed(2)}</td>
+<td contenteditable="true" onblur="editCategory(${i},this.textContent)">${e.category}</td>
+<td><button onclick="duplicate(${i})">Dupliser +14d</button>
+<button onclick="removeEntry(${i})">Fjern</button></td>`;
+tbody.appendChild(tr);
+});
+document.getElementById("total").textContent=total.toFixed(2);
+}
+
+// ---- Edit functions ----
+function editDesc(i,text){ entries[i].desc=text; saveStorage(); render(); }
+function editAmount(i,text){ let val=parseFloat(text.replace(",",".")); if(!isNaN(val)) entries[i].amount=val; saveStorage(); render(); }
+function editCategory(i,text){ entries[i].category=text; saveStorage(); render(); }
+function removeEntry(i){ entries.splice(i,1); saveStorage(); render(); }
+function duplicate(i){ let e=entries[i]; let d=new Date(e.date); d.setDate(d.getDate()+14); entries.push({date:d,desc:e.desc,amount:e.amount,category:e.category}); saveStorage(); render(); }
+
+// ---- Detaljert utskrift ----
+function renderDetailed(){
+let saldo=0; let html="<table><tr><th>Dato</th><th>Beskrivelse</th><th>Endring</th><th>Kategori</th><th>Saldo</th></tr>";
+entries.forEach(e=>{ saldo+=e.amount; html+=`<tr><td>${formatDate(e.date)}</td><td>${e.desc}</td><td class="${e.amount<0?'negative':'positive'}">${e.amount.toFixed(2)}</td><td>${e.category}</td><td>${saldo.toFixed(2)}</td></tr>`; });
+html+=`<tr><td colspan="4"><b>Rest</b></td><td>${saldo.toFixed(2)}</td></tr></table>`;
+document.getElementById("detailedOutput").innerHTML=html;
+}
+
+// ---- Saldo fremover ----
+function renderFuture(){
+let saldo=0; let html="<table><tr><th>Dato</th><th>Beskrivelse</th><th>Beløp</th><th>Saldo</th></tr>";
+entries.forEach(e=>{ saldo+=e.amount; html+=`<tr><td>${formatDate(e.date)}</td><td>${e.desc}</td><td>${e.amount.toFixed(2)}</td><td>${saldo.toFixed(2)}</td></tr>`; });
+document.getElementById("futureOutput").innerHTML=html;
+}
+
+// ---- Toggles ----
+document.getElementById("toggleExpense").onclick=()=>{ forceExpense=!forceExpense; document.getElementById("toggleExpense").style.background=forceExpense?"#aa3333":"#333"; }
+function togglePro(){ proMode=!proMode; alert("Pro Mode "+(proMode?"aktivert":"deaktivert")); }
+
+// ---- Popup ----
+function openHelp(){ document.getElementById("popup").style.display="flex"; }
+function closeHelp(){ document.getElementById("popup").style.display="none"; localStorage.setItem("visited","yes"); }
+if(!localStorage.getItem("visited")) openHelp();
+
+// ---- Export ----
+function exportPNG(){ html2canvas(document.body).then(canvas=>{ const link=document.createElement("a"); link.download="budsjett.png"; link.href=canvas.toDataURL(); link.click(); }); }
+function exportCSV(){
+let txt="Dato,Beskrivelse,Beløp,Kategori\n";
+entries.forEach(e=>{ txt+=`${formatDate(e.date)},${e.desc},${e.amount.toFixed(2)},${e.category}\n`; });
+const blob=new Blob([txt],{type:"text/csv"}); const url=URL.createObjectURL(blob);
+const link=document.createElement("a"); link.href=url; link.download="budsjett.csv"; link.click(); URL.revokeObjectURL(url);
+}
+function exportNotes(){ let txt="Dato\tBeskrivelse\tBeløp\tKategori\n"; entries.forEach(e=>{ txt+=`${formatDate(e.date)}\t${e.desc}\t${e.amount.toFixed(2)}\t${e.category}\n`; }); const blob=new Blob([txt],{type:"text/plain"}); const url=URL.createObjectURL(blob); const link=document.createElement("a"); link.href=url; link.download="budsjett.txt"; link.click(); URL.revokeObjectURL(url); }
+
+// ---- Share URL ----
+function shareURL(){
+const data=encodeURIComponent(JSON.stringify(entries));
+prompt("Kopier denne lenken for å dele:", window.location.href+"?data="+data);
+}
+
+// ---- LocalStorage ----
+function saveStorage(){ localStorage.setItem("entries",JSON.stringify(entries)); }
+
+</script>
+</body>
+</html>
