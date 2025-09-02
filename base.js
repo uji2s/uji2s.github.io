@@ -1,35 +1,7 @@
+// base.js
+import { formatMoney, parseDate, formatDate } from './utils.js';
 console.log("DEBUG: base.js loaded");
 
-// --- utils functions ---
-function formatMoney(val){
-    return val.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-function parseDate(str){
-    const months = {"jan":0,"feb":1,"mar":2,"apr":3,"mai":4,"jun":5,"jul":6,"aug":7,"sep":8,"okt":9,"nov":10,"des":11};
-    str = str.toLowerCase().replace(/\./g,"").trim();
-    let day, month, year;
-    if(str.match(/^\d{1,2}$/)){
-        day = parseInt(str);
-        month = new Date().getMonth();
-        year = new Date().getFullYear();
-    } else {
-        let parts = str.split(" ");
-        day = parseInt(parts[0]);
-        month = months[parts[1].substr(0,3)] ?? new Date().getMonth();
-        year = new Date().getFullYear();
-    }
-    return new Date(year, month, day);
-}
-
-function formatDate(date){
-    const months = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
-    let d = date.getDate().toString().padStart(2,"0");
-    let m = months[date.getMonth()];
-    return `${d}. ${m}`;
-}
-
-// --- main ---
 document.addEventListener("DOMContentLoaded", ()=>{
     const entryTableBody = document.getElementById("entryTableBody");
     const tableEl = entryTableBody.parentElement;
@@ -65,47 +37,41 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }
 
     function renderEntries(){
-    if(entries.length===0){
-        tableEl.style.display = "none";
-        return;
-    } else {
-        tableEl.style.display = "table";
+        if(entries.length===0){
+            tableEl.style.display = "none";
+            return;
+        } else {
+            tableEl.style.display = "table";
+        }
+
+        const showCategory = entries.some(e=>e.category && e.category.trim() !== "");
+        entryTableBody.innerHTML="";
+        entries.forEach((entry,index)=>{
+            const tr = document.createElement("tr");
+            tr.classList.add("added");
+            let amountColor = entry.amount > 0 ? "green" : entry.amount < 0 ? "red" : "yellow";
+            tr.innerHTML=`
+                <td>${formatDate(entry.date)}</td>
+                <td>${entry.desc || ""}</td>
+                <td style="color:${amountColor}">${formatMoney(Number(entry.amount))}</td>
+                ${showCategory ? `<td>${entry.category || ""}</td>` : ""}
+                <td>
+                    <button class="plus14" data-index="${index}">+14d</button>
+                    <button class="remove" data-index="${index}">fjern</button>
+                </td>
+            `;
+            entryTableBody.appendChild(tr);
+        });
     }
-
-    const showCategory = entries.some(e=>e.category && e.category.trim() !== "");
-
-    entryTableBody.innerHTML="";
-    entries.forEach((entry,index)=>{
-        const tr = document.createElement("tr");
-        tr.classList.add("added");
-
-        let amountColor = entry.amount > 0 ? "green" : entry.amount < 0 ? "red" : "yellow";
-
-        tr.innerHTML=`
-            <td>${formatDate(entry.date)}</td>
-            <td>${entry.desc || ""}</td>
-            <td style="color:${amountColor}">${formatMoney(Number(entry.amount))}</td>
-            ${showCategory ? `<td>${entry.category || ""}</td>` : ""}
-            <td>
-                <button class="plus14" data-index="${index}">+14d</button>
-                <button class="remove" data-index="${index}">fjern</button>
-            </td>
-        `;
-        entryTableBody.appendChild(tr);
-    });
-}
-
 
     function addEntry(descVal, amountVal, dateVal, categoryVal){
         const desc = descVal ?? nameInput.value.trim();
         const amount = amountVal ?? parseFloat(amountInput.value);
         const date = dateVal ?? parseDate(dateInput.value.trim());
         const category = categoryVal ?? categoryInput.value.trim();
-
         if(isNaN(amount) || !date) return;
 
-        const entry = {desc, amount, date, category};
-        entries.push(entry);
+        entries.push({desc, amount, date, category});
         entries.sort((a,b)=>a.date-b.date);
         saveStorage();
         renderEntries();
