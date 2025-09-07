@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>marius' epic budsjettkalkulator</title>
+<link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#222222">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>marius' epic budsjettkalkulator</title>
-<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -19,11 +19,10 @@
     <div id="dateInfo"></div>
 
     <div class="header">
-    <div id="dateDisplay"></div>
-    <div id="timeDisplay"></div>
-</div>
-<button id="helpBtn">?</button>
-
+        <div id="dateDisplay"></div>
+        <div id="timeDisplay"></div>
+    </div>
+    <button id="helpBtn">?</button>
 
     <!-- dagens saldo -->
     <div class="inputs">
@@ -33,9 +32,8 @@
 
     <div class="inputs">
         <input type="text" id="desc" placeholder="navn" title="navn på inntekt/utgift">
-        <input type="number" id="amount" placeholder="beløp" title="beløp i kr">
+        <input type="text" id="amount" placeholder="beløp" title="beløp i kr">
         <input type="text" id="date" placeholder="dato" title="dd.mm.yyyy">
-        
         <button id="addEntryBtn" title="legg til">legg til</button>
     </div>
 
@@ -73,15 +71,12 @@
     <div id="footer">(c) uji 2025</div>
 </div>
 
-<div class="popup" id="popup">
+<!-- popup -->
+<div id="popup">
     <div class="popup-content">
-        <h2>hvordan bruke kalkulatoren</h2>
-        <p>fyll inn navn, beløp, dato og kategori. klikk "legg til". bruk +14d per rad for å duplisere frem i tid.</p>
-        <details id="changelogDropdown">
-            <summary>hva er forandret?</summary>
-            <div id="changelogDisplay"></div>
-        </details>
-        <button id="clearCacheBtn">tøm cache</button>
+        <div id="helpDisplay"></div>
+        <div id="changelogDisplay"></div>
+        <button id="clearCacheBtn">clear cache</button>
         <button id="closePopupBtn">lukk</button>
     </div>
 </div>

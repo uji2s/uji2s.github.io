@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budsjett-cache-v1.02';
+const CACHE_NAME = 'budsjett-cache-v1.071'; // øk versjon for å invalidere gammel cache
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -7,12 +7,11 @@ const ASSETS_TO_CACHE = [
   '/utils.js',
   '/manifest.json',
   '/icon-192.png',
-  '/changelog.md',
-  '/icon-512.png'
-  // add any other assets you load, like images or utils.js
+  '/icon-512.png',
+  '/changelog.md'
 ];
 
-// Install: cache everything
+// --- Install: cache everything ---
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
@@ -20,25 +19,28 @@ self.addEventListener('install', (e) => {
   self.skipWaiting(); // activate immediately
 });
 
-// Activate: remove old caches
+// --- Activate: remove old caches ---
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then(keys => 
-      Promise.all(keys.map(key => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      }))
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      )
     )
   );
   self.clients.claim();
 });
 
-// Fetch: serve cached first, fallback to network
+// --- Fetch: serve cached first, fallback to network ---
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
+
       return fetch(e.request).then(networkRes => {
-        // optionally cache new files dynamically
+        // cache new files dynamically
         return caches.open(CACHE_NAME).then(cache => {
           cache.put(e.request, networkRes.clone());
           return networkRes;
@@ -49,4 +51,13 @@ self.addEventListener('fetch', (e) => {
       if (e.request.destination === 'document') return caches.match('/');
     })
   );
+});
+
+// --- Optional: listen for message to clear cache from page ---
+self.addEventListener('message', async (e) => {
+  if (e.data === 'CLEAR_CACHE') {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    console.log('[SW] Cleared all caches');
+  }
 });

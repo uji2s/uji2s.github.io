@@ -13,7 +13,7 @@ const helpBtn = document.getElementById("helpBtn");
 const popup = document.getElementById("popup");
 const closePopupBtn = document.getElementById("closePopupBtn");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
-const changelogDisplay = document.querySelector("#popup #changelogDisplay");
+const changelogDisplay = document.getElementById("changelogDisplay");
 
 const todayBalanceInput = document.getElementById("todayBalance");
 const addTodayBalanceBtn = document.getElementById("addTodayBalanceBtn");
@@ -42,8 +42,22 @@ if (stored) {
     }
 }
 
+clearCacheBtn?.addEventListener("click", async () => {
+    entries = [];
+    saveStorage(); // tømmer localStorage
+    renderEntries();
+    updateSluttsum();
+
+    // tøm service worker cache
+    if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+    }
+
+    location.reload(); // reload siden
+});
+
 function saveStorage() {
-    // Serialize dates as ISO strings to avoid losing info
     const serializable = entries.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date }));
     localStorage.setItem("entries", JSON.stringify(serializable));
 }
@@ -57,7 +71,6 @@ function updateSluttsum() {
     }
     let sum = entries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
     sluttsumEl.style.display = "block";
-    // build DOM safely instead of innerHTML
     sluttsumEl.textContent = "til overs: ";
     const span = document.createElement("span");
     span.style.color = sum > 0 ? 'green' : sum < 0 ? 'red' : 'yellow';
@@ -65,13 +78,11 @@ function updateSluttsum() {
     sluttsumEl.appendChild(span);
 }
 
-// --- Render entries (safe DOM updates, use fragment) ---
+// --- Render entries ---
 function renderEntries() {
     if (!tableEl || !entryTableBody) return;
 
     tableEl.style.display = entries.length === 0 ? "none" : "table";
-
-    // Clear body
     entryTableBody.innerHTML = "";
 
     const frag = document.createDocumentFragment();
@@ -117,114 +128,82 @@ function renderEntries() {
     updateDetailedView();
 }
 
+// --- Inline editing ---
 function enableInlineEditing() {
-    entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
+    entryTableBody.querySelectorAll("tr").forEach((tr,index)=>{
         const tdDate = tr.children[0];
         const tdAmount = tr.children[2];
 
-        const createInput = (type="text") => {
+        const createInput = (val,type="text")=>{
             const input = document.createElement("input");
             input.type = type;
-            input.value = ""; // blank for editing
-            input.style.width = "auto";
-            input.style.minWidth = "40px";
-            input.style.boxSizing = "content-box";
-            input.style.border = "none";
-            input.style.background = "transparent";
-            input.style.color = "#eee";
-            input.style.fontSize = "inherit";
-            input.style.fontFamily = "inherit";
-            input.style.textAlign = "center";
-            input.style.padding = "0 3px";
-            input.style.zIndex = "1";
+            input.value = "";
+            input.placeholder = val;
+            input.className = "inline-edit-input";
             return input;
-        }
+        };
 
-        const finishDate = (input) => {
+        const finishDate = (input)=>{
             let val = input.value.trim();
-            let newDate;
-            if(val){
-                newDate = parseDate(val);
-                if(!newDate){
-                    const today = new Date();
-                    const day = parseInt(val,10);
-                    if(!isNaN(day)){
-                        newDate = new Date(today.getFullYear(), today.getMonth(), day);
-                    } else {
-                        newDate = entries[index].date;
-                    }
-                }
-            } else {
-                newDate = entries[index].date;
+            let newDate = parseDate(val);
+            if(!newDate){
+                const today = new Date();
+                const day = parseInt(val,10);
+                if(!isNaN(day)) newDate = new Date(today.getFullYear(),today.getMonth(),day);
+                else newDate = entries[index].date;
             }
 
             const oldMonth = entries[index].date.getMonth();
             const newMonth = newDate.getMonth();
-            if(newMonth !== oldMonth){
-                for(let i=index+1; i<entries.length; i++){
-                    entries[i].date.setMonth(entries[i].date.getMonth() + (newMonth-oldMonth));
+            if(newMonth!==oldMonth){
+                for(let i=index+1;i<entries.length;i++){
+                    entries[i].date.setMonth(entries[i].date.getMonth()+(newMonth-oldMonth));
                 }
             }
             entries[index].date = newDate;
             saveStorage();
             renderEntries();
-        }
+        };
 
-        const finishAmount = (input) => {
-            let val = input.value.replace("kr","").replace(/\./g,"").replace(",","").trim();
-            val = parseFloat(val);
-            if(isNaN(val)) val = entries[index].amount;
-            entries[index].amount = val;
+        const finishAmount = (input)=>{
+            let val = input.value.replace(/[^\d.-]/g,"").trim();
+            let num = parseFloat(val);
+            if(isNaN(num)) num = entries[index].amount;
+            entries[index].amount = num;
             saveStorage();
             renderEntries();
-        }
+        };
 
-        const setupInline = (td, finishFn) => {
-            td.addEventListener("click", () => {
-                if(td.querySelector("input")) return; // unngå doble inputs
-                td.classList.add("inline-edit");
-
-                // bakgrunn
-                const bg = document.createElement("div");
-                bg.className = "edit-bg";
-                td.appendChild(bg);
-
-                const input = createInput();
-                input.placeholder = td.textContent;
+        const setupInline = (td,finishFn)=>{
+            td.addEventListener("click",()=>{
+                if(td.querySelector("input")) return;
+                const initialVal = td.textContent;
+                const input = createInput(initialVal);
+                td.textContent="";
                 td.appendChild(input);
                 input.focus();
 
-                const doFinish = () => {
-                    td.classList.remove("inline-edit");
-                    td.innerHTML = ""; // fjern input og bakgrunn
-                    finishFn(input);
-                }
-
-                input.addEventListener("blur", doFinish);
-                input.addEventListener("keydown", (e) => { 
-                    if(e.key==="Enter"){ 
-                        e.preventDefault(); 
-                        input.blur(); 
+                const doFinish = ()=>{ finishFn(input); };
+                input.addEventListener("blur",doFinish);
+                input.addEventListener("keydown",(e)=>{
+                    if(e.key==="Enter"||e.keyCode===13){
+                        e.preventDefault();
+                        input.blur();
                     }
                 });
             });
-        }
+        };
 
-        setupInline(tdDate, finishDate);
-        setupInline(tdAmount, finishAmount);
+        setupInline(tdDate,finishDate);
+        setupInline(tdAmount,finishAmount);
     });
 }
 
-
-
-
-// --- Hook til renderEntries ---
 const originalRenderEntries = renderEntries;
 renderEntries = function(){
     originalRenderEntries();
     enableInlineEditing();
-}
-
+};
 
 // --- Add entry ---
 function addEntry(descVal, amountVal, dateVal) {
@@ -239,7 +218,6 @@ function addEntry(descVal, amountVal, dateVal) {
     saveStorage();
     renderEntries();
 
-    // clear inputs only when user used the inputs (not programmatic call)
     if (typeof descVal === "undefined") {
         if (nameInput) nameInput.value = "";
         if (amountInput) amountInput.value = "";
@@ -247,10 +225,8 @@ function addEntry(descVal, amountVal, dateVal) {
     }
 }
 
-// --- Add normal entry ---
 addBtn?.addEventListener("click", () => addEntry());
 
-// --- Plus14 / remove (robust event delegation) ---
 entryTableBody?.addEventListener("click", (e) => {
     const btn = e.target.closest?.('button');
     if (!btn) return;
@@ -271,7 +247,6 @@ entryTableBody?.addEventListener("click", (e) => {
     }
 });
 
-// --- Enter key ---
 [nameInput, amountInput, dateInput].forEach(input => {
     input?.addEventListener("keydown", (e) => { if (e.key === "Enter") addEntry(); });
 });
@@ -284,11 +259,10 @@ addTodayBalanceBtn?.addEventListener("click", () => {
         return;
     }
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0,0,0,0);
 
     const exists = entries.some(e =>
-        (e.desc || "").toLowerCase() === "dagens saldo" &&
-        e.date.toDateString() === today.toDateString()
+        (e.desc||"").toLowerCase()==="dagens saldo" && e.date.toDateString()===today.toDateString()
     );
     if (exists) {
         alert("dagens saldo er allerede lagt til for i dag");
@@ -296,84 +270,67 @@ addTodayBalanceBtn?.addEventListener("click", () => {
     }
 
     addEntry("dagens saldo", val, today);
-    if (todayBalanceInput) todayBalanceInput.value = "";
+    if(todayBalanceInput) todayBalanceInput.value="";
 });
 
 // --- Detaljert visning ---
 function updateDetailedView(){
-    if (!detailedView) return;
+    if(!detailedView) return;
     const onlyExpenses = showOnlyExpensesDetailed?.checked;
-    let runningTotal = 0;
+    let runningTotal=0;
     const dailyTotals = {};
-
     const sorted = [...entries].sort((a,b)=>a.date-b.date);
 
     sorted.forEach(e=>{
-        runningTotal += Number(e.amount || 0);
+        runningTotal += Number(e.amount||0);
         const dayStr = formatDateReadable(e.date,true);
-        if(!dailyTotals[dayStr]) dailyTotals[dayStr] = [];
-
+        if(!dailyTotals[dayStr]) dailyTotals[dayStr]=[];
         if(onlyExpenses){
-            if(e.amount < 0) dailyTotals[dayStr].push(runningTotal);
-        } else {
+            if(e.amount<0) dailyTotals[dayStr].push(runningTotal);
+        }else{
             dailyTotals[dayStr].push(runningTotal);
         }
     });
 
-    detailedView.innerHTML = "";
+    detailedView.innerHTML="";
     for(const day in dailyTotals){
-        if(dailyTotals[day].length === 0) continue;
-        const val = dailyTotals[day][dailyTotals[day].length - 1];
-        const color = val>0?"green":val<0?"red":"yellow";
-        const div = document.createElement("div");
-        div.textContent = `${day}: ${formatMoney(val)} kr`;
-        div.style.color = color;
+        if(dailyTotals[day].length===0) continue;
+        const val=dailyTotals[day][dailyTotals[day].length-1];
+        const color=val>0?"green":val<0?"red":"yellow";
+        const div=document.createElement("div");
+        div.textContent=`${day}: ${formatMoney(val)} kr`;
+        div.style.color=color;
         detailedView.appendChild(div);
     }
 }
 
-// --- Toggle show only expenses ---
-showOnlyExpensesDetailed?.addEventListener("change", updateDetailedView);
+showOnlyExpensesDetailed?.addEventListener("change",updateDetailedView);
 
-// --- popup ---
-popup && (popup.style.display = "flex");
-renderChangelog();
-
-
-helpBtn?.addEventListener("click", ()=> {
-    popup && (popup.style.display = "flex");
-    renderChangelog();
-});
-
-closePopupBtn?.addEventListener("click", () => { if(popup) popup.style.display = "none"; });
-// --- Lukk popup ved å klikke utenfor ---
-popup?.addEventListener("click", (e) => {
-    if (e.target === popup) {
-        popup.style.display = "none";
+// --- Popup / Help / Changelog ---
+let changelogLoaded=false;
+helpBtn?.addEventListener("click",()=>{
+    popup.style.display="flex";
+    renderHelpText();
+    if(!changelogLoaded){
+        renderChangelog();
+        changelogLoaded=true;
     }
 });
 
-clearCacheBtn?.addEventListener("click", () => {
-    entries = [];
-    saveStorage();
-    renderEntries();
-    updateSluttsum();
-    if(popup) popup.style.display = "none";
-});
-
-// --- Update date/time display ---
-function updateDateTime(){
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2,"0");
-    const minutes = now.getMinutes().toString().padStart(2,"0");
-    const todayStr = formatDateReadable(now, true);
-
-    if(dateInfo) dateInfo.innerHTML = `${todayStr} | ${hours}:${minutes}`;
+function renderHelpText(){
+    const helpContainer=document.getElementById("helpDisplay");
+    if(!helpContainer) return;
+    helpContainer.innerHTML=`
+        <h2>hvordan bruke kalkulatoren?</h2>
+        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
+        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
+        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu.</p>
+        <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
+        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
+        <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
+    `;
 }
-updateDateTime();
-setInterval(updateDateTime, 60000);
 
-// --- Changelog --- (kun endring: små bokstaver på "sist oppdatert")
 async function renderChangelog() {
     try {
         const res = await fetch("changelog.md");
@@ -427,13 +384,54 @@ async function renderChangelog() {
     }
 }
 
-// --- Sort entries ---
-const sortSelect = document.getElementById("sortSelect");
-sortSelect?.addEventListener("change", () => {
-    const val = sortSelect.value;
-    if (val === "date") entries.sort((a, b) => a.date - b.date);
-    else if (val === "amount") entries.sort((a, b) => a.amount - b.amount);
+
+// --- Date / Time ---
+function updateDateTime(){
+    const now=new Date();
+    if(dateInfo) dateInfo.textContent=`dagens dato: ${formatDate(now)}`;
+    const dateDisplay=document.getElementById("dateDisplay");
+    const timeDisplay=document.getElementById("timeDisplay");
+    if(dateDisplay) dateDisplay.textContent=formatDateReadable(now);
+    if(timeDisplay) timeDisplay.textContent=getCurrentTimeString();
+}
+setInterval(updateDateTime,1000);
+updateDateTime();
+
+// --- Sort ---
+const sortSelect=document.getElementById("sortSelect");
+sortSelect?.addEventListener("change",()=>{
+    const val=sortSelect.value;
+    if(val==="date") entries.sort((a,b)=>a.date-b.date);
+    if(val==="amount") entries.sort((a,b)=>Number(a.amount)-Number(b.amount));
     renderEntries();
+});
+
+// --- Popup funksjoner ---
+function openPopup() {
+    if (!popup) return;
+    popup.style.display = "flex";
+}
+
+function closePopup() {
+    if (!popup) return;
+    popup.style.display = "none";
+}
+
+// Åpne popup når ? trykkes
+helpBtn?.addEventListener("click", () => {
+    openPopup();
+});
+
+// Lukk popup når lukk-knapp trykkes
+closePopupBtn?.addEventListener("click", () => {
+    closePopup();
+});
+
+// Lukk popup ved å klikke utenfor innholdet
+popup?.addEventListener("click", (e) => {
+    if (e.target === popup) {
+        closePopup();
+    }
 });
 
 if ('serviceWorker' in navigator) {
@@ -441,13 +439,13 @@ if ('serviceWorker' in navigator) {
     .then(reg => {
       console.log('SW registered', reg);
 
-      // Listen for updates
+      // Lytt etter nye SW-versjoner
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              // New update available
+              // Ny oppdatering tilgjengelig
               showUpdateBanner();
             }
           }
@@ -457,32 +455,9 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('SW registration failed:', err));
 }
 
-// Show update banner
-function showUpdateBanner() {
-  if(document.getElementById('updateBanner')) return; // already showing
-
-  const banner = document.createElement('div');
-  banner.id = 'updateBanner';
-  banner.textContent = 'Ny oppdatering tilgjengelig – klikk for å laste på nytt';
-  banner.style.cssText = `
-    position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #00aaff;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 9999;
-    font-weight: bold;
-  `;
-  banner.addEventListener('click', () => location.reload());
-  document.body.appendChild(banner);
-}
 
 
-// --- Initial ---
+// --- Initial render ---
 renderEntries();
 updateSluttsum();
 updateDetailedView();

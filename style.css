@@ -26,7 +26,6 @@ h1 {
     animation: rgbFade 5s linear infinite;
 }
 
-
 #dateInfo{
     font-size:0.9em;
     color:#ccc;
@@ -42,7 +41,8 @@ h1 {
 }
 
 #helpBtn{
-    margin-top:0;
+    display: block;
+    margin: 5px auto 15px auto;
 }
 
 .inputs{
@@ -87,22 +87,22 @@ th, td{
     margin-top:10px;
     font-size:0.9em;
     color:#ccc;
+    text-align:center;
 }
 
 /* popup */
-.popup{
+#popup{
     display:none;
     position:fixed;
     top:0; left:0;
     width:100%; height:100%;
     background: rgba(0,0,0,0.7);
-    display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
-.popup-content{
+.popup-content {
     background:#333;
     padding:20px;
     border-radius:8px;
@@ -110,8 +110,9 @@ th, td{
     width:90%;
     display:flex;
     flex-direction: column;
-    align-items: center;
-    margin:auto;
+    align-items: stretch;
+    gap:10px;
+    position: relative;
 }
 
 #changelogDisplay{
@@ -119,14 +120,12 @@ th, td{
     display:flex;
     flex-direction: column;
     gap:5px;
-    margin-top:5px;
 }
 
 #changelogDisplay details{
     width:100%;
     display:flex;
     flex-direction: column;
-    align-items: center;
 }
 
 #changelogDisplay details > summary{
@@ -139,19 +138,15 @@ th, td{
     border-radius:5px;
 }
 
-#changelogDisplay details pre{
+#changelogDisplay details div{
     width:100%;
     max-height:200px;
     overflow-y:auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    padding:5px 10px;
     background:#222;
-    padding:10px;
     border-radius:5px;
     font-family: monospace;
     color:#eee;
-    margin:0 0 5px 0;
-    box-sizing: border-box;
 }
 
 /* Detaljert visning container */
@@ -175,67 +170,18 @@ th, td{
     background:#333;
     border-radius:5px;
 }
+
 #detailedView div {
     padding:2px 5px;
 }
 
-/* Color-coded entries */
-.positive { color: green; }
-.negative { color: red; }
-
-#showOnlyExpensesDetailed {
-    margin-bottom: 5px;
-}
-
-#helpBtn {
-    display: block;
-    margin: 5px auto 15px auto; /* sentrer og litt avstand */
-}
-
-#footer{
-    font-size:0.9em;
-    color:#ccc;
-    margin-top:10px;
-    text-align:center;
-}
-
-/* Stopper auto-zoom på mobil når input får fokus */
-input, textarea, select {
-    font-size: 16px; /* iOS zoom trigger under 16px */
-    -webkit-text-size-adjust: 100%;
-}
-
 /* Inline editing */
-td.inline-edit {
-    position: relative;
-}
-
-/* Bakgrunn bak input for å hindre gjennomlysning */
-td.inline-edit .edit-bg {
-    position: absolute;
-    top: 0; left: 0;
+td.inline-edit-input {
+    background:#222;
+    color:#eee;
+    border:none;
+    outline:none;
     width: 100%;
-    height: 100%;
-    background: #222; /* match body background */
-    z-index: 0;
-    border-radius: 2px;
-}
-
-/* Input selv */
-td.inline-edit input {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    box-sizing: border-box;
-    border: none;
-    background: transparent;
-    color: #eee;
+    box-sizing:border-box;
     text-align: center;
-    font-size: inherit;
-    font-family: inherit;
-    padding: 0 2px;
-    margin: 0;
-}
-td.inline-edit input::placeholder {
-    color: rgba(255,255,255,0.5);
 }
