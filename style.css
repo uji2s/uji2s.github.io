@@ -113,6 +113,7 @@ th, td{
     align-items: stretch;
     gap:10px;
     position: relative;
+    overflow-y: auto;  /* gjør vertikal scroll mulig */
 }
 
 #changelogDisplay{
