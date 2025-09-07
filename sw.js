@@ -7,6 +7,7 @@ const ASSETS_TO_CACHE = [
   '/utils.js',
   '/manifest.json',
   '/icon-192.png',
+  '/changelog.md',
   '/icon-512.png'
   // add any other assets you load, like images or utils.js
 ];
