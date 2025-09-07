@@ -327,6 +327,52 @@ sortSelect?.addEventListener("change", () => {
     renderEntries();
 });
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => {
+      console.log('SW registered', reg);
+
+      // Listen for updates
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed') {
+            if (navigator.serviceWorker.controller) {
+              // New update available
+              showUpdateBanner();
+            }
+          }
+        });
+      });
+    })
+    .catch(err => console.error('SW registration failed:', err));
+}
+
+// Show update banner
+function showUpdateBanner() {
+  if(document.getElementById('updateBanner')) return; // already showing
+
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.textContent = 'Ny oppdatering tilgjengelig – klikk for å laste på nytt';
+  banner.style.cssText = `
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #00aaff;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 9999;
+    font-weight: bold;
+  `;
+  banner.addEventListener('click', () => location.reload());
+  document.body.appendChild(banner);
+}
+
+
 // --- Initial ---
 renderEntries();
 updateSluttsum();
