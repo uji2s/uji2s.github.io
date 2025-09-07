@@ -10,33 +10,35 @@
 
 <div class="container">
     <h1 id="mainTitle">marius' epic budsjettkalkulator</h1>
+
     <div id="dateInfo"></div>
 
     <div class="header">
-        <div id="dateDisplay"></div>
-        <div id="timeDisplay"></div>
-        <button id="helpBtn">?</button>
-    </div>
+    <div id="dateDisplay"></div>
+    <div id="timeDisplay"></div>
+</div>
+<button id="helpBtn">?</button>
+
 
     <!-- dagens saldo -->
     <div class="inputs">
-        <input type="text" id="todayBalance" placeholder="dagens saldo" title="dagens saldo">
-        <button id="addTodayBalanceBtn">legg til saldo</button>
+        <input type="text" id="todayBalance" placeholder="dagens saldo" title="dagens saldo (kun tall)">
+        <button id="addTodayBalanceBtn" title="legg til dagens saldo">legg til saldo</button>
     </div>
 
     <div class="inputs">
-        <input type="text" id="desc" placeholder="navn">
-        <input type="number" id="amount" placeholder="beløp">
-        <input type="text" id="date" placeholder="dato">
-        <button id="addEntryBtn">legg til</button>
+        <input type="text" id="desc" placeholder="navn" title="navn på inntekt/utgift">
+        <input type="number" id="amount" placeholder="beløp" title="beløp i kr">
+        <input type="text" id="date" placeholder="dato" title="dd.mm.yyyy">
+        
+        <button id="addEntryBtn" title="legg til">legg til</button>
     </div>
 
     <div class="sortControls">
         <label for="sortSelect">sort:</label>
-        <select id="sortSelect">
+        <select id="sortSelect" title="sorter etter">
             <option value="date">dato</option>
             <option value="amount">beløp</option>
-            <option value="desc">navn</option>
         </select>
     </div>
 
@@ -53,17 +55,17 @@
     </table>
 
     <!-- detaljert visning under tabell -->
-    <!-- detaljert visning under tabellen -->
-<div id="detailedContainer">
-    <details id="detailedDropdown">
-        <summary>detailed view</summary>
-        <label><input type="checkbox" id="showOnlyExpensesDetailed"> vis kun utgifter</label>
-        <div id="detailedView"></div>
-    </details>
-</div>
-
+    <div id="detailedContainer">
+        <details id="detailedDropdown">
+            <summary>detailed view</summary>
+            <label><input type="checkbox" id="showOnlyExpensesDetailed"> vis kun utgifter</label>
+            <div id="detailedView"></div>
+        </details>
+    </div>
 
     <div id="sluttsum">til overs: 0.00 kr</div>
+
+    <div id="footer">(c) uji 2025</div>
 </div>
 
 <div class="popup" id="popup">

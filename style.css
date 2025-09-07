@@ -13,14 +13,19 @@ body{
     padding:10px;
 }
 
-h1{
-    font-size:1.8em;
-    background: linear-gradient(to right, rgb(255,0,150), rgb(0,255,200));
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    margin-bottom:10px;
+@keyframes rgbFade {
+    0% { color: rgb(255,0,0); }
+    33% { color: rgb(0,255,0); }
+    66% { color: rgb(0,0,255); }
+    100% { color: rgb(255,0,0); }
 }
+
+h1 {
+    font-size:1.8em;
+    margin-bottom:10px;
+    animation: rgbFade 5s linear infinite;
+}
+
 
 #dateInfo{
     font-size:0.9em;
@@ -34,6 +39,10 @@ h1{
     align-items:center;
     gap:10px;
     margin-bottom:10px;
+}
+
+#helpBtn{
+    margin-top:0;
 }
 
 .inputs{
@@ -72,6 +81,12 @@ th, td{
 #sluttsum{
     margin-top:15px;
     font-weight:bold;
+}
+
+#footer{
+    margin-top:10px;
+    font-size:0.9em;
+    color:#ccc;
 }
 
 /* popup */
@@ -168,8 +183,18 @@ th, td{
 .positive { color: green; }
 .negative { color: red; }
 
-/* Checkbox styling */
 #showOnlyExpensesDetailed {
     margin-bottom: 5px;
 }
 
+#helpBtn {
+    display: block;
+    margin: 5px auto 15px auto; /* sentrer og litt avstand */
+}
+
+#footer{
+    font-size:0.9em;
+    color:#ccc;
+    margin-top:10px;
+    text-align:center;
+}
