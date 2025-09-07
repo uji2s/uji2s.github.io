@@ -117,6 +117,117 @@ function renderEntries() {
     updateDetailedView();
 }
 
+function enableInlineEditing() {
+    entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
+        const tdDate = tr.children[0];
+        const tdAmount = tr.children[2];
+
+        const createInput = (initialVal, type="text") => {
+            const input = document.createElement("input");
+            input.type = type;
+            input.value = "";
+            input.placeholder = initialVal;
+            input.style.opacity = "0.5";
+            input.style.width = "100%";
+            input.style.boxSizing = "border-box";
+            input.style.fontSize = "16px"; // stopper zoom på mobil
+            input.autocapitalize = "none";
+            input.autocomplete = "off";
+            input.autocorrect = "off";
+            return input;
+        }
+
+        const finishDate = (input) => {
+            let val = input.value.trim();
+            let newDate;
+            if(val){
+                newDate = parseDate(val);
+                if(!newDate){
+                    const today = new Date();
+                    const day = parseInt(val,10);
+                    if(!isNaN(day)){
+                        newDate = new Date(today.getFullYear(), today.getMonth(), day);
+                    } else {
+                        newDate = entries[index].date;
+                    }
+                }
+            } else {
+                newDate = entries[index].date;
+            }
+
+            const oldMonth = entries[index].date.getMonth();
+            const newMonth = newDate.getMonth();
+            if(newMonth !== oldMonth){
+                for(let i=index+1; i<entries.length; i++){
+                    entries[i].date.setMonth(entries[i].date.getMonth() + (newMonth-oldMonth));
+                }
+            }
+            entries[index].date = newDate;
+            saveStorage();
+            renderEntries();
+        }
+
+        const finishAmount = (input) => {
+            let val = input.value.replace(/kr/g,"").replace(",",".").trim();
+            let parsed = parseFloat(val);
+            if(isNaN(parsed)) parsed = entries[index].amount;
+            entries[index].amount = parsed;
+            saveStorage();
+            renderEntries();
+        }
+
+        const setupInline = (td, finishFn, isAmount=false) => {
+            td.addEventListener("click", () => {
+                if(td.querySelector("input")) return;
+                const oldText = td.textContent;
+                const input = createInput(oldText);
+                td.textContent = "";
+                td.appendChild(input);
+                input.focus();
+
+                // vis placeholder først, fjern når skriver
+                input.addEventListener("input", () => { input.style.opacity="1"; });
+
+                const doFinish = () => {
+                    if(isAmount && input.value){
+                        let val = input.value.replace(/kr/g,"").replace(",",".").trim();
+                        if(!isNaN(parseFloat(val))) input.value = val + " kr";
+                    }
+                    finishFn(input);
+                };
+
+                input.addEventListener("blur", doFinish);
+
+                input.addEventListener("keydown", (e) => {
+                    if(e.key === "Enter" || e.key === "Return"){
+                        e.preventDefault();
+                        input.blur();
+                    } else if(e.key === "Escape"){
+                        td.textContent = oldText;
+                    }
+                });
+
+                input.addEventListener("focus", () => {
+                    input.value = "";
+                    input.style.opacity="1";
+                });
+            });
+        }
+
+        setupInline(tdDate, finishDate);
+        setupInline(tdAmount, finishAmount, true);
+    });
+}
+
+
+// --- Hook til renderEntries ---
+const originalRenderEntries = renderEntries;
+renderEntries = function(){
+    originalRenderEntries();
+    enableInlineEditing();
+}
+
+
 // --- Add entry ---
 function addEntry(descVal, amountVal, dateVal) {
     const desc = typeof descVal === "string" ? descVal : (nameInput?.value || "").trim();
