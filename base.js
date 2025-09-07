@@ -37,24 +37,22 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }
 
     function renderEntries(){
-        if(entries.length===0){
-            tableEl.style.display = "none";
-            return;
-        } else {
-            tableEl.style.display = "table";
-        }
+    if(entries.length === 0){
+        tableEl.style.display = "none";
+        return;
+    } else {
+        tableEl.style.display = "table";
+    }
 
-        const showCategory = entries.some(e=>e.category && e.category.trim() !== "");
-        entryTableBody.innerHTML="";
-        entries.forEach((entry,index)=>{
+    entryTableBody.innerHTML = "";
+        entries.forEach((entry, index) => {
             const tr = document.createElement("tr");
             tr.classList.add("added");
-            let amountColor = entry.amount > 0 ? "green" : entry.amount < 0 ? "red" : "yellow";
-            tr.innerHTML=`
+            const amountColor = entry.amount > 0 ? "green" : entry.amount < 0 ? "red" : "yellow";
+            tr.innerHTML = `
                 <td>${formatDate(entry.date)}</td>
                 <td>${entry.desc || ""}</td>
                 <td style="color:${amountColor}">${formatMoney(Number(entry.amount))}</td>
-                ${showCategory ? `<td>${entry.category || ""}</td>` : ""}
                 <td>
                     <button class="plus14" data-index="${index}">+14d</button>
                     <button class="remove" data-index="${index}">fjern</button>
@@ -64,15 +62,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
         });
     }
 
-    function addEntry(descVal, amountVal, dateVal, categoryVal){
+
+    function addEntry(descVal, amountVal, dateVal){
         const desc = descVal ?? nameInput.value.trim();
         const amount = amountVal ?? parseFloat(amountInput.value);
         const date = dateVal ?? parseDate(dateInput.value.trim());
-        const category = categoryVal ?? categoryInput.value.trim();
         if(isNaN(amount) || !date) return;
 
-        entries.push({desc, amount, date, category});
-        entries.sort((a,b)=>a.date-b.date);
+        entries.push({desc, amount, date});
+        entries.sort((a,b)=>a.date - b.date);
         saveStorage();
         renderEntries();
         updateSluttsum();
@@ -81,9 +79,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
             nameInput.value = "";
             amountInput.value = "";
             dateInput.value = "";
-            categoryInput.value = "";
         }
     }
+
 
     addBtn.addEventListener("click", ()=>addEntry());
 
@@ -103,7 +101,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         }
     });
 
-    [nameInput, amountInput, dateInput, categoryInput].forEach(input=>{
+    [nameInput, amountInput, dateInput].forEach(input=>{
         input.addEventListener("keydown",(e)=>{
             if(e.key==="Enter") addEntry();
         });
