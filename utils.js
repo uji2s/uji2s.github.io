@@ -48,3 +48,18 @@ export function calculateSum(entries){
 export function getAmountColor(amount){
     return amount > 0 ? "green" : amount < 0 ? "red" : "yellow";
 }
+
+// --- Format readable date ---
+export function formatDateReadable(date) {
+    const months = ["Jan","Feb","Mar","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Des"];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+}
+
+// --- Return current time string HH:MM ---
+export function getCurrentTimeString() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2,"0") + ":" + now.getMinutes().toString().padStart(2,"0");
+}

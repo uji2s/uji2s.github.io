@@ -1,4 +1,5 @@
-import { formatMoney, parseDate, formatDate } from './utils.js';
+import { formatMoney, parseDate, formatDate, formatDateReadable, getCurrentTimeString } from './utils.js';
+
 console.log("DEBUG: base.js loaded");
 
 const entryTableBody = document.getElementById("entryTableBody");
@@ -14,8 +15,67 @@ const closePopupBtn = document.getElementById("closePopupBtn");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const changelogDisplay = document.getElementById("changelogDisplay");
 const changelogDropdown = document.getElementById("changelogDropdown");
+const mainTitle = document.getElementById("mainTitle");
 
 let entries = [];
+
+// --- Ny div for datoinfo ---
+const dateInfo = document.createElement("div");
+dateInfo.style.fontSize = "0.9em";
+dateInfo.style.color = "#ccc";
+dateInfo.style.marginBottom = "10px";
+mainTitle.insertAdjacentElement("afterend", dateInfo);
+
+// --- Funksjon for å oppdatere dagens dato + klokke ---
+function updateCurrentDateTime() {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2,"0");
+    const minutes = now.getMinutes().toString().padStart(2,"0");
+    const timeStr = `${hours}:${minutes}`;
+
+    const todayStr = formatDateReadable(now); // bruker utils-format: DD-MM-YYYY
+
+    if(dateInfo.dataset.lastUpdated){
+        dateInfo.innerHTML = `Sist oppdatert: ${dateInfo.dataset.lastUpdated}<br>Dagens dato: ${timeStr} | ${todayStr}`;
+    } else {
+        dateInfo.innerHTML = `Dagens dato: ${timeStr} | ${todayStr}`;
+    }
+}
+
+
+// --- Hent nyeste dato fra changelog ---
+async function setLastUpdatedFromChangelog() {
+    try {
+        const res = await fetch("changelog.md");
+        if (!res.ok) throw new Error("Failed to load changelog");
+        const text = await res.text();
+        const lines = text.split("\n");
+
+        let latestDate = null;
+        const dateRegex = /\[(\d{2}-\d{2}-\d{4})\]/; // matcher [dd-mm-yyyy]
+
+        lines.forEach(line => {
+            const match = line.match(dateRegex);
+            if(match){
+                const d = match[1].split("-").reverse().join("-"); // yyyy-mm-dd
+                const dt = new Date(d);
+                if(!latestDate || dt > latestDate) latestDate = dt;
+            }
+        });
+
+        if(latestDate){
+            dateInfo.dataset.lastUpdated = formatDateReadable(latestDate);
+        }
+    } catch(err) {
+        console.error("Could not read changelog date:", err);
+    } finally {
+        updateCurrentDateTime();
+        setInterval(updateCurrentDateTime, 60000);
+    }
+}
+
+// --- Start ---
+setLastUpdatedFromChangelog();
 
 // --- Load entries ---
 const stored = localStorage.getItem("entries");
@@ -30,7 +90,7 @@ function updateSluttsum(){
         sluttsumEl.style.display = "none";
         return;
     }
-    let sum = entries.reduce((acc,e)=>acc+Number(e.amount),0);
+    const sum = entries.reduce((acc,e)=>acc+Number(e.amount),0);
     sluttsumEl.style.display = "block";
     sluttsumEl.innerHTML = `til overs: <span style="color:${sum>0?'green':sum<0?'red':'yellow'}">${formatMoney(sum)} kr</span>`;
 }
@@ -39,11 +99,10 @@ function renderEntries(){
     if(entries.length === 0){
         tableEl.style.display = "none";
         return;
-    } else {
-        tableEl.style.display = "table";
     }
-
+    tableEl.style.display = "table";
     entryTableBody.innerHTML = "";
+
     entries.forEach((entry, index) => {
         const tr = document.createElement("tr");
         tr.classList.add("added");
@@ -80,6 +139,7 @@ function addEntry(descVal, amountVal, dateVal){
     }
 }
 
+// --- Event listeners ---
 addBtn.addEventListener("click", ()=>addEntry());
 
 entryTableBody.addEventListener("click",(e)=>{
@@ -105,14 +165,8 @@ entryTableBody.addEventListener("click",(e)=>{
 });
 
 // --- Popup ---
-helpBtn.addEventListener("click", () => {
-    popup.style.display = "flex";
-});
-
-closePopupBtn.addEventListener("click", () => {
-    popup.style.display = "none";
-});
-
+helpBtn.addEventListener("click", () => popup.style.display = "flex");
+closePopupBtn.addEventListener("click", () => popup.style.display = "none");
 clearCacheBtn.addEventListener("click", () => {
     entries = [];
     saveStorage();
@@ -165,6 +219,6 @@ changelogDropdown.addEventListener("toggle", async () => {
     }
 });
 
-// --- initial render ---
+// --- Initial render ---
 renderEntries();
 updateSluttsum();
