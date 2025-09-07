@@ -50,13 +50,14 @@ export function getAmountColor(amount){
 }
 
 // --- Format readable date ---
-export function formatDateReadable(date) {
-    const months = ["Jan","Feb","Mar","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Des"];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
+export function formatDateReadable(d) {
+    const day = d.getDate();
+    const monthNames = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
     return `${day} ${month} ${year}`;
 }
+
 
 // --- Return current time string HH:MM ---
 export function getCurrentTimeString() {

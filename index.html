@@ -10,11 +10,18 @@
 
 <div class="container">
     <h1 id="mainTitle">marius' epic budsjettkalkulator</h1>
+    <div id="dateInfo"></div>
 
     <div class="header">
         <div id="dateDisplay"></div>
         <div id="timeDisplay"></div>
         <button id="helpBtn">?</button>
+    </div>
+
+    <!-- dagens saldo -->
+    <div class="inputs">
+        <input type="text" id="todayBalance" placeholder="dagens saldo" title="dagens saldo">
+        <button id="addTodayBalanceBtn">legg til saldo</button>
     </div>
 
     <div class="inputs">
@@ -45,6 +52,17 @@
         <tbody id="entryTableBody"></tbody>
     </table>
 
+    <!-- detaljert visning under tabell -->
+    <!-- detaljert visning under tabellen -->
+<div id="detailedContainer">
+    <details id="detailedDropdown">
+        <summary>detailed view</summary>
+        <label><input type="checkbox" id="showOnlyExpensesDetailed"> vis kun utgifter</label>
+        <div id="detailedView"></div>
+    </details>
+</div>
+
+
     <div id="sluttsum">til overs: 0.00 kr</div>
 </div>
 
@@ -56,7 +74,6 @@
             <summary>hva er forandret?</summary>
             <div id="changelogDisplay"></div>
         </details>
-
         <button id="clearCacheBtn">tøm cache</button>
         <button id="closePopupBtn">lukk</button>
     </div>
