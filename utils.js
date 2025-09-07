@@ -33,3 +33,18 @@ export function formatDate(date){
     const months = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
     return `${date.getDate().toString().padStart(2,"0")}. ${months[date.getMonth()]}`;
 }
+
+// --- nye hjelpere ---
+export function addDays(date, days){
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+}
+
+export function calculateSum(entries){
+    return entries.reduce((acc,e)=>acc+Number(e.amount),0);
+}
+
+export function getAmountColor(amount){
+    return amount > 0 ? "green" : amount < 0 ? "red" : "yellow";
+}

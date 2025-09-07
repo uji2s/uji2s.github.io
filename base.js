@@ -1,8 +1,9 @@
 // base.js
-import { formatMoney, parseDate, formatDate } from './utils.js';
+import { formatMoney, parseDate, formatDate, addDays, calculateSum, getAmountColor } from './utils.js';
 console.log("DEBUG: base.js loaded");
 
 document.addEventListener("DOMContentLoaded", ()=>{
+
     const entryTableBody = document.getElementById("entryTableBody");
     const tableEl = entryTableBody.parentElement;
     const sluttsumEl = document.getElementById("sluttsum");
@@ -10,7 +11,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const nameInput = document.getElementById("desc");
     const amountInput = document.getElementById("amount");
     const dateInput = document.getElementById("date");
-    const categoryInput = document.getElementById("category");
     const helpBtn = document.getElementById("helpBtn");
     const popup = document.getElementById("popup");
     const closePopupBtn = document.getElementById("closePopupBtn");
@@ -31,28 +31,27 @@ document.addEventListener("DOMContentLoaded", ()=>{
             sluttsumEl.style.display = "none";
             return;
         }
-        let sum = entries.reduce((acc,e)=>acc+Number(e.amount),0);
+        const sum = calculateSum(entries);
         sluttsumEl.style.display = "block";
-        sluttsumEl.innerHTML = `til overs: <span style="color:${sum>0?'green':sum<0?'red':'yellow'}">${formatMoney(sum)} kr</span>`;
+        sluttsumEl.innerHTML = `til overs: <span style="color:${getAmountColor(sum)}">${formatMoney(sum)} kr</span>`;
     }
 
     function renderEntries(){
-    if(entries.length === 0){
-        tableEl.style.display = "none";
-        return;
-    } else {
-        tableEl.style.display = "table";
-    }
+        if(entries.length === 0){
+            tableEl.style.display = "none";
+            return;
+        } else {
+            tableEl.style.display = "table";
+        }
 
-    entryTableBody.innerHTML = "";
+        entryTableBody.innerHTML = "";
         entries.forEach((entry, index) => {
             const tr = document.createElement("tr");
             tr.classList.add("added");
-            const amountColor = entry.amount > 0 ? "green" : entry.amount < 0 ? "red" : "yellow";
             tr.innerHTML = `
                 <td>${formatDate(entry.date)}</td>
                 <td>${entry.desc || ""}</td>
-                <td style="color:${amountColor}">${formatMoney(Number(entry.amount))}</td>
+                <td style="color:${getAmountColor(entry.amount)}">${formatMoney(Number(entry.amount))}</td>
                 <td>
                     <button class="plus14" data-index="${index}">+14d</button>
                     <button class="remove" data-index="${index}">fjern</button>
@@ -62,7 +61,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
         });
     }
 
-
     function addEntry(descVal, amountVal, dateVal){
         const desc = descVal ?? nameInput.value.trim();
         const amount = amountVal ?? parseFloat(amountInput.value);
@@ -71,9 +69,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
         entries.push({desc, amount, date});
         entries.sort((a,b)=>a.date - b.date);
-        saveStorage();
-        renderEntries();
-        updateSluttsum();
+        updateUI();
 
         if(!descVal){
             nameInput.value = "";
@@ -82,6 +78,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
         }
     }
 
+    function updateUI(){
+        saveStorage();
+        renderEntries();
+        updateSluttsum();
+    }
+
+    function togglePopup(show){
+        popup.style.display = show ? "flex" : "none";
+    }
 
     addBtn.addEventListener("click", ()=>addEntry());
 
@@ -89,15 +94,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
         if(e.target.classList.contains("plus14")){
             const idx = e.target.dataset.index;
             const original = entries[idx];
-            const newDate = new Date(original.date);
-            newDate.setDate(newDate.getDate()+14);
-            addEntry(original.desc, original.amount, newDate, original.category);
+            addEntry(original.desc, original.amount, addDays(original.date, 14));
         } else if(e.target.classList.contains("remove")){
             const idx = e.target.dataset.index;
             entries.splice(idx,1);
-            saveStorage();
-            renderEntries();
-            updateSluttsum();
+            updateUI();
         }
     });
 
@@ -108,14 +109,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
     });
 
     // --- popup ---
-    helpBtn.addEventListener("click", ()=>popup.style.display="flex");
-    closePopupBtn.addEventListener("click", ()=>popup.style.display="none");
+    helpBtn.addEventListener("click", ()=>togglePopup(true));
+    closePopupBtn.addEventListener("click", ()=>togglePopup(false));
     clearCacheBtn.addEventListener("click", ()=>{
         entries=[];
-        saveStorage();
-        renderEntries();
-        updateSluttsum();
-        popup.style.display="none";
+        updateUI();
+        togglePopup(false);
     });
 
     // initial render
