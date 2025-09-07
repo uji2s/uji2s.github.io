@@ -122,18 +122,21 @@ function enableInlineEditing() {
         const tdDate = tr.children[0];
         const tdAmount = tr.children[2];
 
-        const createInput = (initialVal, type="text") => {
+        const createInput = (type="text") => {
             const input = document.createElement("input");
             input.type = type;
-            input.value = "";
-            input.placeholder = initialVal;
-            input.style.opacity = "0.5";
-            input.style.width = "100%";
-            input.style.boxSizing = "border-box";
-            input.style.fontSize = "16px"; // stopper zoom på mobil
-            input.autocapitalize = "none";
-            input.autocomplete = "off";
-            input.autocorrect = "off";
+            input.value = ""; // blank for editing
+            input.style.width = "auto";
+            input.style.minWidth = "40px";
+            input.style.boxSizing = "content-box";
+            input.style.border = "none";
+            input.style.background = "transparent";
+            input.style.color = "#eee";
+            input.style.fontSize = "inherit";
+            input.style.fontFamily = "inherit";
+            input.style.textAlign = "center";
+            input.style.padding = "0 3px";
+            input.style.zIndex = "1";
             return input;
         }
 
@@ -168,56 +171,51 @@ function enableInlineEditing() {
         }
 
         const finishAmount = (input) => {
-            let val = input.value.replace(/kr/g,"").replace(",",".").trim();
-            let parsed = parseFloat(val);
-            if(isNaN(parsed)) parsed = entries[index].amount;
-            entries[index].amount = parsed;
+            let val = input.value.replace("kr","").replace(/\./g,"").replace(",","").trim();
+            val = parseFloat(val);
+            if(isNaN(val)) val = entries[index].amount;
+            entries[index].amount = val;
             saveStorage();
             renderEntries();
         }
 
-        const setupInline = (td, finishFn, isAmount=false) => {
+        const setupInline = (td, finishFn) => {
             td.addEventListener("click", () => {
-                if(td.querySelector("input")) return;
-                const oldText = td.textContent;
-                const input = createInput(oldText);
-                td.textContent = "";
+                if(td.querySelector("input")) return; // unngå doble inputs
+                td.classList.add("inline-edit");
+
+                // bakgrunn
+                const bg = document.createElement("div");
+                bg.className = "edit-bg";
+                td.appendChild(bg);
+
+                const input = createInput();
+                input.placeholder = td.textContent;
                 td.appendChild(input);
                 input.focus();
 
-                // vis placeholder først, fjern når skriver
-                input.addEventListener("input", () => { input.style.opacity="1"; });
-
                 const doFinish = () => {
-                    if(isAmount && input.value){
-                        let val = input.value.replace(/kr/g,"").replace(",",".").trim();
-                        if(!isNaN(parseFloat(val))) input.value = val + " kr";
-                    }
+                    td.classList.remove("inline-edit");
+                    td.innerHTML = ""; // fjern input og bakgrunn
                     finishFn(input);
-                };
+                }
 
                 input.addEventListener("blur", doFinish);
-
-                input.addEventListener("keydown", (e) => {
-                    if(e.key === "Enter" || e.key === "Return"){
-                        e.preventDefault();
-                        input.blur();
-                    } else if(e.key === "Escape"){
-                        td.textContent = oldText;
+                input.addEventListener("keydown", (e) => { 
+                    if(e.key==="Enter"){ 
+                        e.preventDefault(); 
+                        input.blur(); 
                     }
-                });
-
-                input.addEventListener("focus", () => {
-                    input.value = "";
-                    input.style.opacity="1";
                 });
             });
         }
 
         setupInline(tdDate, finishDate);
-        setupInline(tdAmount, finishAmount, true);
+        setupInline(tdAmount, finishAmount);
     });
 }
+
+
 
 
 // --- Hook til renderEntries ---
