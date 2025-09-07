@@ -3,7 +3,7 @@ import { formatMoney, parseDate, formatDate, formatDateReadable, getCurrentTimeS
 console.log("DEBUG: base.js loaded");
 
 const entryTableBody = document.getElementById("entryTableBody");
-const tableEl = entryTableBody.parentElement;
+const tableEl = entryTableBody?.parentElement;
 const sluttsumEl = document.getElementById("sluttsum");
 const addBtn = document.getElementById("addEntryBtn");
 const nameInput = document.getElementById("desc");
@@ -25,83 +25,136 @@ const dateInfo = document.getElementById("dateInfo");
 
 let entries = [];
 
-// --- Load entries ---
+// --- Load entries (safe) ---
 const stored = localStorage.getItem("entries");
-if (stored) entries = JSON.parse(stored).map(e => ({ ...e, date: new Date(e.date) }));
+if (stored) {
+    try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+            entries = parsed.map(e => ({
+                ...e,
+                date: e.date ? new Date(e.date) : new Date()
+            }));
+        }
+    } catch (err) {
+        console.error("Failed to parse stored entries:", err);
+        entries = [];
+    }
+}
 
 function saveStorage() {
-    localStorage.setItem("entries", JSON.stringify(entries));
+    // Serialize dates as ISO strings to avoid losing info
+    const serializable = entries.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date }));
+    localStorage.setItem("entries", JSON.stringify(serializable));
 }
 
 // --- Update slutt sum ---
 function updateSluttsum() {
+    if (!sluttsumEl) return;
     if (entries.length === 0) {
         sluttsumEl.style.display = "none";
         return;
     }
-    let sum = entries.reduce((acc, e) => acc + Number(e.amount), 0);
+    let sum = entries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
     sluttsumEl.style.display = "block";
-    sluttsumEl.innerHTML = `til overs: <span style="color:${sum > 0 ? 'green' : sum < 0 ? 'red' : 'yellow'}">${formatMoney(sum)} kr</span>`;
+    // build DOM safely instead of innerHTML
+    sluttsumEl.textContent = "til overs: ";
+    const span = document.createElement("span");
+    span.style.color = sum > 0 ? 'green' : sum < 0 ? 'red' : 'yellow';
+    span.textContent = `${formatMoney(sum)} kr`;
+    sluttsumEl.appendChild(span);
 }
 
-// --- Render entries ---
+// --- Render entries (safe DOM updates, use fragment) ---
 function renderEntries() {
-    if (entries.length === 0) {
-        tableEl.style.display = "none";
-    } else {
-        tableEl.style.display = "table";
-    }
+    if (!tableEl || !entryTableBody) return;
 
+    tableEl.style.display = entries.length === 0 ? "none" : "table";
+
+    // Clear body
     entryTableBody.innerHTML = "";
+
+    const frag = document.createDocumentFragment();
     entries.forEach((entry, index) => {
         const tr = document.createElement("tr");
         tr.classList.add("added");
-        const amountColor = entry.amount > 0 ? "green" : entry.amount < 0 ? "red" : "yellow";
-        tr.innerHTML = `
-            <td>${formatDate(entry.date)}</td>
-            <td>${entry.desc || ""}</td>
-            <td style="color:${amountColor}">${formatMoney(Number(entry.amount))} kr</td>
-            <td>
-                <button class="plus14" data-index="${index}">+14d</button>
-                <button class="remove" data-index="${index}">fjern</button>
-            </td>
-        `;
-        entryTableBody.appendChild(tr);
+
+        const tdDate = document.createElement("td");
+        tdDate.textContent = formatDate(entry.date);
+
+        const tdDesc = document.createElement("td");
+        tdDesc.textContent = entry.desc || "";
+
+        const tdAmount = document.createElement("td");
+        const amountVal = Number(entry.amount || 0);
+        tdAmount.style.color = amountVal > 0 ? "green" : amountVal < 0 ? "red" : "yellow";
+        tdAmount.textContent = `${formatMoney(amountVal)} kr`;
+
+        const tdActions = document.createElement("td");
+        const btnPlus = document.createElement("button");
+        btnPlus.className = "plus14";
+        btnPlus.dataset.index = String(index);
+        btnPlus.textContent = "+14d";
+
+        const btnRemove = document.createElement("button");
+        btnRemove.className = "remove";
+        btnRemove.dataset.index = String(index);
+        btnRemove.textContent = "fjern";
+
+        tdActions.appendChild(btnPlus);
+        tdActions.appendChild(btnRemove);
+
+        tr.appendChild(tdDate);
+        tr.appendChild(tdDesc);
+        tr.appendChild(tdAmount);
+        tr.appendChild(tdActions);
+
+        frag.appendChild(tr);
     });
+
+    entryTableBody.appendChild(frag);
+    updateSluttsum();
     updateDetailedView();
 }
 
 // --- Add entry ---
 function addEntry(descVal, amountVal, dateVal) {
-    const desc = descVal ?? nameInput.value.trim();
-    const amount = amountVal ?? parseFloat(amountInput.value);
-    const date = dateVal ?? parseDate(dateInput.value.trim());
-    if (isNaN(amount) || !date) return;
+    const desc = typeof descVal === "string" ? descVal : (nameInput?.value || "").trim();
+    const amountRaw = typeof amountVal !== "undefined" ? amountVal : parseFloat(amountInput?.value || "");
+    const amount = Number(amountRaw);
+    const date = dateVal instanceof Date ? dateVal : parseDate((dateInput?.value || "").trim());
+    if (isNaN(amount) || !(date instanceof Date) || isNaN(date.getTime())) return;
 
     entries.push({ desc, amount, date });
     entries.sort((a, b) => a.date - b.date);
     saveStorage();
     renderEntries();
 
-    if (!descVal) {
-        nameInput.value = "";
-        amountInput.value = "";
-        dateInput.value = "";
+    // clear inputs only when user used the inputs (not programmatic call)
+    if (typeof descVal === "undefined") {
+        if (nameInput) nameInput.value = "";
+        if (amountInput) amountInput.value = "";
+        if (dateInput) dateInput.value = "";
     }
 }
 
 // --- Add normal entry ---
-addBtn.addEventListener("click", () => addEntry());
+addBtn?.addEventListener("click", () => addEntry());
 
-// --- Plus14 / remove ---
-entryTableBody.addEventListener("click", (e) => {
-    const idx = e.target.dataset.index;
-    if (e.target.classList.contains("plus14")) {
+// --- Plus14 / remove (robust event delegation) ---
+entryTableBody?.addEventListener("click", (e) => {
+    const btn = e.target.closest?.('button');
+    if (!btn) return;
+    const idx = Number.parseInt(btn.dataset.index, 10);
+    if (!Number.isFinite(idx)) return;
+
+    if (btn.classList.contains("plus14")) {
         const original = entries[idx];
+        if (!original) return;
         const newDate = new Date(original.date);
         newDate.setDate(newDate.getDate() + 14);
         addEntry(original.desc, original.amount, newDate);
-    } else if (e.target.classList.contains("remove")) {
+    } else if (btn.classList.contains("remove")) {
         entries.splice(idx, 1);
         saveStorage();
         renderEntries();
@@ -111,12 +164,12 @@ entryTableBody.addEventListener("click", (e) => {
 
 // --- Enter key ---
 [nameInput, amountInput, dateInput].forEach(input => {
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") addEntry(); });
+    input?.addEventListener("keydown", (e) => { if (e.key === "Enter") addEntry(); });
 });
 
 // --- Dagens saldo ---
-addTodayBalanceBtn.addEventListener("click", () => {
-    const val = parseFloat(todayBalanceInput.value);
+addTodayBalanceBtn?.addEventListener("click", () => {
+    const val = parseFloat(todayBalanceInput?.value || "");
     if (isNaN(val)) {
         alert("dagens saldo må være et tall");
         return;
@@ -125,7 +178,7 @@ addTodayBalanceBtn.addEventListener("click", () => {
     today.setHours(0, 0, 0, 0);
 
     const exists = entries.some(e =>
-        e.desc.toLowerCase() === "dagens saldo" &&
+        (e.desc || "").toLowerCase() === "dagens saldo" &&
         e.date.toDateString() === today.toDateString()
     );
     if (exists) {
@@ -134,19 +187,20 @@ addTodayBalanceBtn.addEventListener("click", () => {
     }
 
     addEntry("dagens saldo", val, today);
-    todayBalanceInput.value = "";
+    if (todayBalanceInput) todayBalanceInput.value = "";
 });
 
 // --- Detaljert visning ---
 function updateDetailedView(){
-    const onlyExpenses = showOnlyExpensesDetailed.checked;
+    if (!detailedView) return;
+    const onlyExpenses = showOnlyExpensesDetailed?.checked;
     let runningTotal = 0;
     const dailyTotals = {};
-    
+
     const sorted = [...entries].sort((a,b)=>a.date-b.date);
 
     sorted.forEach(e=>{
-        runningTotal += e.amount;
+        runningTotal += Number(e.amount || 0);
         const dayStr = formatDateReadable(e.date,true);
         if(!dailyTotals[dayStr]) dailyTotals[dayStr] = [];
 
@@ -163,40 +217,39 @@ function updateDetailedView(){
         const val = dailyTotals[day][dailyTotals[day].length - 1];
         const color = val>0?"green":val<0?"red":"yellow";
         const div = document.createElement("div");
-        div.textContent=`${day}: ${formatMoney(val)} kr`;
-        div.style.color=color;
+        div.textContent = `${day}: ${formatMoney(val)} kr`;
+        div.style.color = color;
         detailedView.appendChild(div);
     }
 }
 
 // --- Toggle show only expenses ---
-showOnlyExpensesDetailed.addEventListener("change", updateDetailedView);
+showOnlyExpensesDetailed?.addEventListener("change", updateDetailedView);
 
 // --- popup ---
-// --- vis popup på load og fyll changelog ---
-popup.style.display = "flex";
+popup && (popup.style.display = "flex");
 renderChangelog();
 
 
-helpBtn.addEventListener("click", ()=> {
-    popup.style.display = "flex";
+helpBtn?.addEventListener("click", ()=> {
+    popup && (popup.style.display = "flex");
     renderChangelog();
 });
 
-closePopupBtn.addEventListener("click", () => { popup.style.display = "none"; });
+closePopupBtn?.addEventListener("click", () => { if(popup) popup.style.display = "none"; });
 // --- Lukk popup ved å klikke utenfor ---
-popup.addEventListener("click", (e) => {
+popup?.addEventListener("click", (e) => {
     if (e.target === popup) {
         popup.style.display = "none";
     }
 });
 
-clearCacheBtn.addEventListener("click", () => {
+clearCacheBtn?.addEventListener("click", () => {
     entries = [];
     saveStorage();
     renderEntries();
     updateSluttsum();
-    popup.style.display = "none";
+    if(popup) popup.style.display = "none";
 });
 
 // --- Update date/time display ---
@@ -206,7 +259,7 @@ function updateDateTime(){
     const minutes = now.getMinutes().toString().padStart(2,"0");
     const todayStr = formatDateReadable(now, true);
 
-    dateInfo.innerHTML = `${todayStr} | ${hours}:${minutes}`;
+    if(dateInfo) dateInfo.innerHTML = `${todayStr} | ${hours}:${minutes}`;
 }
 updateDateTime();
 setInterval(updateDateTime, 60000);
@@ -218,6 +271,7 @@ async function renderChangelog() {
         if(!res.ok) return;
 
         const text = await res.text();
+        if(!changelogDisplay) return;
         changelogDisplay.innerHTML = "";
 
         // Finn siste oppdateringsdato
@@ -264,10 +318,9 @@ async function renderChangelog() {
     }
 }
 
-
 // --- Sort entries ---
 const sortSelect = document.getElementById("sortSelect");
-sortSelect.addEventListener("change", () => {
+sortSelect?.addEventListener("change", () => {
     const val = sortSelect.value;
     if (val === "date") entries.sort((a, b) => a.date - b.date);
     else if (val === "amount") entries.sort((a, b) => a.amount - b.amount);
