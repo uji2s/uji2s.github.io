@@ -52,7 +52,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if ('serviceWorker' in navigator) {
             try {
                 const registration = await navigator.serviceWorker.getRegistration();
-                if (!registration) return;
+                if (!registration) {
+                    console.warn("Ingen SW-registrering funnet");
+                    return;
+                }
+
+                // --- Tving nytt fetch av sw.js ---
+                await fetch(`/sw.js?t=${Date.now()}`, { cache: "no-store" });
+
+                // --- Oppdater service worker ---
+                await registration.update({ bypassCache: true });
 
                 // Hvis det allerede finnes en ny SW som venter
                 if (registration.waiting) {
@@ -61,10 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Sjekk server for ny SW
-                await registration.update();
-
-                // Hvis ny SW installeres
+                // Hvis en ny SW blir funnet under update
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
