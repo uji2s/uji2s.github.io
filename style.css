@@ -134,10 +134,10 @@ th, td{
     flex-direction: column;
     gap: 5px;
 
-    max-height: 80vh;            /* maks høyde på skjermen */
-    overflow-y: auto;            /* scroll kun vertikalt */
-    overflow-x: hidden;          /* ingen horisontal scroll */
-    -webkit-overflow-scrolling: touch; /* smooth scrolling på iOS */
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); /* tar hensyn til notch og statusbar */
+    overflow-y: auto;       /* scroll kun vertikalt */
+    overflow-x: hidden;     /* ingen horisontal scroll */
+    -webkit-overflow-scrolling: touch; /* smooth scroll på iOS */
 }
 
 #changelogDisplay details{
