@@ -159,14 +159,14 @@ header {
 }
 
 .header-image {
-    max-width: 150px;   /* begrenser størrelse på mobil */
-    width: 50%;          /* responsivt, fyller maks halvparten av bredden på liten skjerm */
+    max-width: 150px;   /* aldri større enn 150px */
+    width: 100%;         /* fyll tilgjengelig plass inntil max-width */
     height: auto;        /* behold proporsjoner */
     display: block;      /* nødvendig for margin auto / centering */
-    padding-top: 2px;
-    padding-bottom: 12.50px;
-
+    margin: 0 auto;      /* sikker centering */
+    padding-bottom: 12px;
 }
+
 
 #changelogDisplay pre {
     white-space: pre-wrap;   /* bryt linjer */
