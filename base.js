@@ -46,47 +46,72 @@ if (stored) {
 
 document.addEventListener("DOMContentLoaded", () => {
     const forceBtn = document.getElementById("forceUpdateBtn");
-    if (!forceBtn) return;
+    if (!forceBtn) {
+        console.warn("DEBUG: Fant ikke Force Update-knappen");
+        return;
+    }
 
     forceBtn.addEventListener("click", async () => {
-        if ('serviceWorker' in navigator) {
-            try {
-                const registration = await navigator.serviceWorker.getRegistration();
-                if (!registration) {
-                    console.warn("Ingen SW-registrering funnet");
-                    return;
-                }
+        console.log("DEBUG: Force update knapp trykket");
 
-                // --- Tving nytt fetch av sw.js ---
-                await fetch(`/sw.js?t=${Date.now()}`, { cache: "no-store" });
+        if (!('serviceWorker' in navigator)) {
+            console.warn("DEBUG: Service workers ikke støttet i denne nettleseren");
+            return;
+        }
 
-                // --- Oppdater service worker ---
-                await registration.update({ bypassCache: true });
+        try {
+            const registration = await navigator.serviceWorker.getRegistration();
+            console.log("DEBUG: Fikk service worker registration:", registration);
 
-                // Hvis det allerede finnes en ny SW som venter
-                if (registration.waiting) {
-                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                    window.location.reload();
-                    return;
-                }
-
-                // Hvis en ny SW blir funnet under update
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            newWorker.postMessage({ type: 'SKIP_WAITING' });
-                            window.location.reload();
-                        }
-                    });
-                });
-            } catch (err) {
-                console.error("Feil ved force update:", err);
+            if (!registration) {
+                console.warn("DEBUG: Ingen aktiv service worker funnet");
+                return;
             }
+
+            // --- Test om vi får en helt fersk sw.js ---
+            console.log("DEBUG: Henter sw.js med timestamp for å bypass cache");
+            const swCheck = await fetch(`/sw.js?t=${Date.now()}`, { cache: "no-store" });
+            console.log("DEBUG: sw.js fetch status:", swCheck.status);
+
+            if (!swCheck.ok) {
+                console.error("DEBUG: sw.js kunne ikke hentes!");
+                return;
+            }
+
+            // --- Prøv å oppdatere service workeren ---
+            console.log("DEBUG: Kaller registration.update()");
+            await registration.update({ bypassCache: true });
+
+            // Sjekk om det er en ny SW som venter
+            if (registration.waiting) {
+                console.log("DEBUG: Ny SW venter, sender SKIP_WAITING");
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
+                return;
+            }
+
+            // Hvis en ny SW blir funnet under oppdatering
+            console.log("DEBUG: Lytter etter updatefound-event");
+            registration.addEventListener('updatefound', () => {
+                console.log("DEBUG: Update found event trigget");
+                const newWorker = registration.installing;
+
+                newWorker.addEventListener('statechange', () => {
+                    console.log("DEBUG: Ny SW state:", newWorker.state);
+
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log("DEBUG: Ny SW installert, sender SKIP_WAITING");
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        window.location.reload();
+                    }
+                });
+            });
+
+        } catch (err) {
+            console.error("DEBUG: Feil ved force update:", err);
         }
     });
 });
-
 
 function saveStorage() {
     const serializable = entries.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date }));
