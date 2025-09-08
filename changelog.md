@@ -18,6 +18,7 @@
 - [02-09-2025] final v1
 
 ### Fixed
+- [08-09-2025] ios improvements, popup fix, detailed view fix, fix for last updated dates
 - [07-09-2025] various fixes and improvements
 - [07-09-2025] fix: scrolling on phone (i hope)
 - [02-09-2025] various fixes
