@@ -27,6 +27,9 @@ foreach ($entry in $commits) {
     $body = ""
     if ($parts.Count -eq 3) { $body = $parts[2].Trim() }
 
+    # --- NY SJEKK: hopp over commits som starter med "update" ---
+    if ($subject.ToLower().StartsWith("update")) { continue }
+
     # Fjern subject fra body hvis den er gjentatt
     $body = ($body -split "`n" | Where-Object { $_.Trim() -ne "" -and $_.Trim() -ne $subject }) -join "`n"
 
