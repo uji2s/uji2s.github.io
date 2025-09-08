@@ -274,35 +274,54 @@ addTodayBalanceBtn?.addEventListener("click", () => {
 });
 
 // --- Detaljert visning ---
-function updateDetailedView(){
-    if(!detailedView) return;
-    const onlyExpenses = showOnlyExpensesDetailed?.checked;
-    let runningTotal=0;
-    const dailyTotals = {};
-    const sorted = [...entries].sort((a,b)=>a.date-b.date);
+function updateDetailedView() {
+    if (!detailedView) return;
 
-    sorted.forEach(e=>{
-        runningTotal += Number(e.amount||0);
-        const dayStr = formatDateReadable(e.date,true);
-        if(!dailyTotals[dayStr]) dailyTotals[dayStr]=[];
-        if(onlyExpenses){
-            if(e.amount<0) dailyTotals[dayStr].push(runningTotal);
-        }else{
-            dailyTotals[dayStr].push(runningTotal);
+    const onlyExpenses = showOnlyExpensesDetailed?.checked;
+    const dailyTotals = {};
+    let runningTotal = 0;
+
+    // Sorter alle entries etter dato
+    const sorted = [...entries].sort((a, b) => a.date - b.date);
+
+    sorted.forEach(entry => {
+        runningTotal += Number(entry.amount || 0);
+        const dayStr = formatDateReadable(entry.date, true);
+
+        if (!dailyTotals[dayStr]) {
+            dailyTotals[dayStr] = {
+                all: null,      // total saldo etter alle transaksjoner
+                expensesOnly: null // saldo etter bare utgifter
+            };
+        }
+
+        // total saldo
+        dailyTotals[dayStr].all = runningTotal;
+
+        // Hvis denne transaksjonen er en utgift
+        if (entry.amount < 0) {
+            // saldo etter at utgiften er betalt
+            dailyTotals[dayStr].expensesOnly = runningTotal;
         }
     });
 
-    detailedView.innerHTML="";
-    for(const day in dailyTotals){
-        if(dailyTotals[day].length===0) continue;
-        const val=dailyTotals[day][dailyTotals[day].length-1];
-        const color=val>0?"green":val<0?"red":"yellow";
-        const div=document.createElement("div");
-        div.textContent=`${day}: ${formatMoney(val)} kr`;
-        div.style.color=color;
+    detailedView.innerHTML = "";
+
+    for (const day in dailyTotals) {
+        const data = dailyTotals[day];
+        let val = onlyExpenses ? data.expensesOnly : data.all;
+
+        // hopp over hvis det ikke finnes utgifter den dagen
+        if (onlyExpenses && val === null) continue;
+
+        const color = val > 0 ? "green" : val < 0 ? "red" : "yellow";
+        const div = document.createElement("div");
+        div.textContent = `${day}: ${formatMoney(val)} kr`;
+        div.style.color = color;
         detailedView.appendChild(div);
     }
 }
+
 
 showOnlyExpensesDetailed?.addEventListener("change",updateDetailedView);
 
@@ -341,27 +360,25 @@ async function renderChangelog() {
         changelogDisplay.innerHTML = "";
 
         // Finn siste oppdateringsdato
-        const dateRegex = /\[(\d{2})-(\d{2})-(\d{4})\]/;
+        const dateRegex = /\[(\d{2})-(\d{2})-(\d{4})\]/g;
         let latestDate = null;
-        text.split("\n").forEach(line=>{
-            const match = line.match(dateRegex);
-            if(match){
-                const [_, d, m, y] = match;
-                const dt = new Date(`${y}-${m}-${d}`);
-                if(!latestDate || dt > latestDate) latestDate = dt;
-            }
-        });
+        let match;
+        while ((match = dateRegex.exec(text)) !== null) {
+            const [_, d, m, y] = match;
+            const dt = new Date(`${y}-${m}-${d}`);
+            if (!latestDate || dt > latestDate) latestDate = dt;
+        }
 
         // --- sist oppdatert over dropdown ---
-        if(latestDate){
-            const d = latestDate.getDate().toString().padStart(2,"0");
-            const m = latestDate.toLocaleString("default",{month:"short"});
-            const y = latestDate.getFullYear();
+        if (latestDate)
+        {
             const lastUpdated = document.createElement("p");
-            lastUpdated.textContent = `sist oppdatert: ${d} ${m} ${y}`; // små bokstaver
+            lastUpdated.textContent = `Sist oppdatert: ${formatDateReadable(latestDate)} | ${getCurrentTimeString()}`;
             lastUpdated.style.fontWeight = "bold";
-            changelogDisplay.appendChild(lastUpdated);
+            changelogDisplay.insertBefore(lastUpdated, changelogDisplay.firstChild);
         }
+
+
 
         // Legg til selve changelog-innholdet (detaljer)
         text.split(/^###\s+/m).slice(1).forEach(section=>{
@@ -388,7 +405,7 @@ async function renderChangelog() {
 // --- Date / Time ---
 function updateDateTime(){
     const now=new Date();
-    if(dateInfo) dateInfo.textContent=`dagens dato: ${formatDate(now)}`;
+    //if(dateInfo) dateInfo.textContent=`dagens dato: ${formatDate(now)}`;
     const dateDisplay=document.getElementById("dateDisplay");
     const timeDisplay=document.getElementById("timeDisplay");
     if(dateDisplay) dateDisplay.textContent=formatDateReadable(now);
@@ -455,7 +472,42 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('SW registration failed:', err));
 }
 
+// --- Show popup on first visit ---
+if (!localStorage.getItem("visitedHelpPopup")) {
+    openPopup();
+    localStorage.setItem("visitedHelpPopup", "true");
+}
 
+document.getElementById('helpBtn').addEventListener('click', () => {
+    document.getElementById('popup').classList.add('show');
+});
+
+document.getElementById('closePopupBtn').addEventListener('click', () => {
+    document.getElementById('popup').classList.remove('show');
+});
+
+function showUpdateBanner() {
+  if(document.getElementById('updateBanner')) return; // already showing
+
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.textContent = 'Ny oppdatering tilgjengelig – klikk for å laste på nytt';
+  banner.style.cssText = `
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #00aaff;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 9999;
+    font-weight: bold;
+  `;
+  banner.addEventListener('click', () => location.reload());
+  document.body.appendChild(banner);
+}
 
 // --- Initial render ---
 renderEntries();

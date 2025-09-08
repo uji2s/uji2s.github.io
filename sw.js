@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budsjett-cache-v1.073'; // øk versjon for å invalidere gammel cache
+const CACHE_NAME = 'budsjett-cache-v1.08'; // øk versjon for å invalidere gammel cache
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -35,23 +35,39 @@ self.addEventListener('activate', (e) => {
 
 // --- Fetch: serve cached first, fallback to network ---
 self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+
+  // Ignore non-HTTP requests (e.g., chrome-extension://)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
+      if (cached) {
+        return cached;
+      }
 
       return fetch(e.request).then(networkRes => {
-        // cache new files dynamically
-        return caches.open(CACHE_NAME).then(cache => {
-          cache.put(e.request, networkRes.clone());
-          return networkRes;
-        });
+        // Only cache GET requests and successful responses
+        if (e.request.method === 'GET' && networkRes && networkRes.status === 200) {
+          const responseClone = networkRes.clone(); // clone BEFORE returning
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(e.request, responseClone);
+          });
+        }
+
+        return networkRes; // return original response to the browser
       });
     }).catch(() => {
-      // fallback if offline and not cached
-      if (e.request.destination === 'document') return caches.match('/');
+      // Fallback if offline and not cached
+      if (e.request.destination === 'document') {
+        return caches.match('/');
+      }
     })
   );
 });
+
 
 // --- Optional: listen for message to clear cache from page ---
 self.addEventListener('message', async (e) => {
