@@ -1,7 +1,9 @@
 
 ### Changed
-- [08-09-2025] added sponsor
 - [08-09-2025] failsafe force update
+- [08-09-2025] added sponsor
+- [08-09-2025] feat: duplicate entry button
+- [08-09-2025] feat: export to txt
 - [07-09-2025] added last updated + todays date
 - [07-09-2025] added detailed view + todays balance
 - [07-09-2025] optimizations in base
