@@ -42,19 +42,25 @@ if (stored) {
     }
 }
 
-clearCacheBtn?.addEventListener("click", async () => {
-    entries = [];
-    saveStorage(); // tømmer localStorage
-    renderEntries();
-    updateSluttsum();
+document.addEventListener("DOMContentLoaded", () => {
+    const forceBtn = document.getElementById("forceUpdateBtn");
+    if (!forceBtn) return;
 
-    // tøm service worker cache
-    if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-    }
-
-    location.reload(); // reload siden
+    forceBtn.addEventListener("click", async () => {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    await registration.update();
+                }
+            } catch (err) {
+                console.error("Feil ved force update:", err);
+                alert("Kunne ikke sjekke oppdatering");
+            }
+        } else {
+            alert("Service Worker ikke støttet i denne nettleseren");
+        }
+    });
 });
 
 function saveStorage() {
@@ -82,6 +88,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     const changelogDisplay = document.getElementById("changelogDisplay"); // må matche din popup
     if (!changelogDisplay) return; // safety check
     await renderChangelog(changelogDisplay);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const clearCacheBtn = document.getElementById("clearCacheBtn");
+    if (!clearCacheBtn) return;
+
+    clearCacheBtn.addEventListener("click", async () => {
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+                // Auto reload etter clearing cache
+                window.location.reload();
+            } catch (err) {
+                console.error("Feil ved clearing cache:", err);
+            }
+        }
+    });
 });
 
 
