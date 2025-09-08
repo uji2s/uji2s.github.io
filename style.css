@@ -143,6 +143,30 @@ th, td{
     box-sizing: border-box;
 }
 
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;      /* sentrerer alt horisontalt */
+    padding-top: env(safe-area-inset-top); /* notch-safe */
+    gap: 10px;                /* litt mellom tittel og bilde */
+}
+
+.image-header {
+    display: flex;
+    justify-content: center; /* sentrerer bildet horisontalt */
+    width: 100%;
+    margin-top: 10px;
+}
+
+.header-image {
+    max-width: 150px;   /* begrenser størrelse på mobil */
+    width: 50%;          /* responsivt, fyller maks halvparten av bredden på liten skjerm */
+    height: auto;        /* behold proporsjoner */
+    display: block;      /* nødvendig for margin auto / centering */
+    padding-top: 2px;
+    padding-bottom: 12.50px;
+
+}
 
 #changelogDisplay pre {
     white-space: pre-wrap;   /* bryt linjer */
