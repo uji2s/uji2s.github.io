@@ -18,8 +18,9 @@
 ### Fixed
 - [08-09-2025] fixed a minor popup overlook
 - [08-09-2025] ios improvements, popup fix, detailed view fix, fix for last updated dates
-- [08-09-2025] smooth scroll, fixed scroll on phone in changelog
 - [08-09-2025] fixed mobile safe area
+- [08-09-2025] fix for scrolling part 2
+- [08-09-2025] smooth scroll, fixed scroll on phone in changelog
 - [07-09-2025] various fixes and improvements
 - [07-09-2025] fix: scrolling on phone (i hope)
 - [02-09-2025] various fixes
