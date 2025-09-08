@@ -123,17 +123,21 @@ th, td{
     z-index: 100000 !important;
 }
 
-
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
-#changelogDisplay{
+#changelogDisplay {
     width: 100%;
-    display:flex;
+    display: flex;
     flex-direction: column;
-    gap:5px;
+    gap: 5px;
+
+    max-height: 80vh;            /* maks høyde på skjermen */
+    overflow-y: auto;            /* scroll kun vertikalt */
+    overflow-x: hidden;          /* ingen horisontal scroll */
+    -webkit-overflow-scrolling: touch; /* smooth scrolling på iOS */
 }
 
 #changelogDisplay details{
@@ -207,4 +211,9 @@ body {
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
     box-sizing: border-box;
+}
+
+/* Lås hele siden horisontalt */
+html, body {
+    overflow-x: hidden; /* ingen horisontal scroll */
 }

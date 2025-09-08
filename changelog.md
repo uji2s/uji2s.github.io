@@ -1,5 +1,6 @@
 
 ### Changed
+- [08-09-2025] updated changelog
 - [07-09-2025] added detailed view + todays balance
 - [07-09-2025] optimizations in base
 - [07-09-2025] mobile phone app support
@@ -19,6 +20,8 @@
 
 ### Fixed
 - [08-09-2025] ios improvements, popup fix, detailed view fix, fix for last updated dates
+- [08-09-2025] fixed a minor popup overlook
+- [08-09-2025] fixed mobile safe area
 - [07-09-2025] various fixes and improvements
 - [07-09-2025] fix: scrolling on phone (i hope)
 - [02-09-2025] various fixes
