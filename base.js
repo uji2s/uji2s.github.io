@@ -154,17 +154,28 @@ function renderEntries() {
         tdAmount.textContent = `${formatMoney(amountVal)} kr`;
 
         const tdActions = document.createElement("td");
+
+        // --- +14d knapp ---
         const btnPlus = document.createElement("button");
         btnPlus.className = "plus14";
         btnPlus.dataset.index = String(index);
         btnPlus.textContent = "+14d";
 
+        // --- Dupliser knapp ---
+        const btnDuplicate = document.createElement("button");
+        btnDuplicate.className = "duplicate";
+        btnDuplicate.dataset.index = String(index);
+        btnDuplicate.textContent = "+";
+
+        // --- Fjern knapp ---
         const btnRemove = document.createElement("button");
         btnRemove.className = "remove";
         btnRemove.dataset.index = String(index);
         btnRemove.textContent = "fjern";
 
+        // Legg til alle knappene
         tdActions.appendChild(btnPlus);
+        tdActions.appendChild(btnDuplicate);
         tdActions.appendChild(btnRemove);
 
         tr.appendChild(tdDate);
@@ -179,6 +190,21 @@ function renderEntries() {
     updateSluttsum();
     updateDetailedView();
 }
+
+function duplicateEntry(index) {
+    const original = entries[index];
+    if (!original) return;
+
+    const newEntry = {
+        date: new Date(original.date),
+        desc: original.desc,
+        amount: original.amount
+    };
+
+    entries.splice(index + 1, 0, newEntry);
+    renderEntries();
+}
+
 
 // --- Inline editing ---
 function enableInlineEditing() {
@@ -282,22 +308,46 @@ addBtn?.addEventListener("click", () => addEntry());
 entryTableBody?.addEventListener("click", (e) => {
     const btn = e.target.closest?.('button');
     if (!btn) return;
+
     const idx = Number.parseInt(btn.dataset.index, 10);
     if (!Number.isFinite(idx)) return;
 
     if (btn.classList.contains("plus14")) {
+        // --- +14d logikk ---
         const original = entries[idx];
         if (!original) return;
         const newDate = new Date(original.date);
         newDate.setDate(newDate.getDate() + 14);
         addEntry(original.desc, original.amount, newDate);
+
+    } else if (btn.classList.contains("duplicate")) {
+        // --- Dupliser logikk ---
+        const original = entries[idx];
+        if (!original) return;
+
+        const newEntry = {
+            date: new Date(original.date),
+            desc: original.desc,
+            amount: original.amount
+        };
+
+        // Legg til kopien rett under originalen
+        entries.splice(idx + 1, 0, newEntry);
+
+        // Lagre og oppdater UI
+        saveStorage();
+        renderEntries();
+        updateSluttsum();
+
     } else if (btn.classList.contains("remove")) {
+        // --- Fjern logikk ---
         entries.splice(idx, 1);
         saveStorage();
         renderEntries();
         updateSluttsum();
     }
 });
+
 
 [nameInput, amountInput, dateInput].forEach(input => {
     input?.addEventListener("keydown", (e) => { if (e.key === "Enter") addEntry(); });
