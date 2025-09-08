@@ -20,6 +20,8 @@ const addTodayBalanceBtn = document.getElementById("addTodayBalanceBtn");
 
 const detailedView = document.getElementById("detailedView");
 const showOnlyExpensesDetailed = document.getElementById("showOnlyExpensesDetailed");
+const exportBtn = document.getElementById("exportBtn");
+
 
 const dateInfo = document.getElementById("dateInfo");
 
@@ -556,6 +558,53 @@ function showUpdateBanner() {
   banner.addEventListener('click', () => location.reload());
   document.body.appendChild(banner);
 }
+
+// --- Eksporter til tekstfil ---
+function exportEntriesToTextFile() {
+    if (entries.length === 0) {
+        alert("Ingen oppføringer å eksportere.");
+        return;
+    }
+
+    let text = "";
+    entries.forEach((entry, index) => {
+        const month = entry.date.toLocaleString("no-NO", { month: "short" });
+        const amount = Number(entry.amount || 0);
+        text += `${index + 1}. ${month} | ${entry.desc} | ${amount > 0 ? "" : "-"}${Math.abs(amount)}kr\n`;
+    });
+
+    const total = entries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    text += `\nTil overs: ${total}kr\n`;
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "budsjett.txt";
+    a.click();
+}
+
+// --- Opprett eksport-knapp kun på desktop ---
+function setupExportBtn() {
+    // skjul eksisterende knapp hvis resize fra desktop -> mobil
+    const existingBtn = document.getElementById("exportBtn");
+    if (existingBtn) existingBtn.remove();
+
+    if (window.innerWidth > 768) { // desktop
+        const btn = document.createElement("button");
+        btn.id = "exportBtn";
+        btn.textContent = "Eksporter til tekstfil";
+        btn.style.margin = "10px";
+        btn.addEventListener("click", exportEntriesToTextFile);
+
+        // Legg knappen over tabellen
+        tableEl?.parentElement?.insertBefore(btn, tableEl);
+    }
+}
+
+// Kjør når siden lastes og når vinduet resize's
+setupExportBtn();
+window.addEventListener("resize", setupExportBtn);
+
 
 // --- Initial render ---
 renderEntries();
