@@ -400,23 +400,26 @@ function renderHelpText(){
     if(!helpContainer) return;
     helpContainer.innerHTML=`
         <h2>hvordan bruke kalkulatoren?</h2>
-        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til...</p>
-        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem...</p>
-        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen...</p>
-        <p><strong>detailed view:</strong> denne visningen viser saldoen din...</p>
-        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer...</p>
-        <p><strong>historikk:</strong> alle oppføringer lagres automatisk...</p>
+        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
+        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
+        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu.</p>
+        <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
+        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
+        <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
     `;
 }
 
 async function renderChangelog(changelogDisplay) {
     if (!changelogDisplay) return;
+
     try {
         const res = await fetch("changelog.md");
         if(!res.ok) return;
+
         const text = await res.text();
         changelogDisplay.innerHTML = "";
 
+        // Finn siste oppdateringsdato
         const dateRegex = /\[(\d{2})-(\d{2})-(\d{4})\]/g;
         let latestDate = null;
         let match;
@@ -426,18 +429,32 @@ async function renderChangelog(changelogDisplay) {
             if (!latestDate || dt > latestDate) latestDate = dt;
         }
 
+        // --- sist oppdatert over dropdown ---
         if (latestDate) {
             const lastUpdated = document.createElement("p");
-            lastUpdated.textContent = `Sist oppdatert: ${formatDateReadable(latestDate,true)}`;
-            changelogDisplay.appendChild(lastUpdated);
+            lastUpdated.textContent = `Sist oppdatert: ${formatDateReadable(latestDate)} | ${getCurrentTimeString()}`;
+            lastUpdated.style.fontWeight = "bold";
+            changelogDisplay.insertBefore(lastUpdated, changelogDisplay.firstChild);
         }
 
-        const pre = document.createElement("pre");
-        pre.textContent = text;
-        changelogDisplay.appendChild(pre);
+        // Legg til selve changelog-innholdet (detaljer)
+        text.split(/^###\s+/m).slice(1).forEach(section=>{
+            const [title, ...lines] = section.split("\n");
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = title;
+            details.appendChild(summary);
+            lines.forEach(line=>{
+                if(line.trim()==="") return;
+                const pre = document.createElement("pre");
+                pre.textContent = line;
+                details.appendChild(pre);
+            });
+            changelogDisplay.appendChild(details);
+        });
 
     } catch(err){
-        console.error("feil ved innlasting changelog:",err);
+        console.error("Kunne ikke lese changelog:", err);
     }
 }
 
@@ -447,6 +464,76 @@ clearCacheBtn?.addEventListener("click",()=>{
     window.location.reload();
 });
 
+function showUpdateBanner() {
+  if(document.getElementById('updateBanner')) return; // already showing
+
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.textContent = 'Ny oppdatering tilgjengelig – klikk for å laste på nytt';
+  banner.style.cssText = `
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #00aaff;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 9999;
+    font-weight: bold;
+  `;
+  banner.addEventListener('click', () => location.reload());
+  document.body.appendChild(banner);
+}
+
+// --- Eksporter til tekstfil ---
+function exportEntriesToTextFile() {
+    if (entries.length === 0) {
+        alert("Ingen oppføringer å eksportere.");
+        return;
+    }
+
+    let text = "";
+    entries.forEach((entry, index) => {
+        const month = entry.date.toLocaleString("no-NO", { month: "short" });
+        const amount = Number(entry.amount || 0);
+        text += `${index + 1}. ${month} | ${entry.desc} | ${amount > 0 ? "" : "-"}${Math.abs(amount)}kr\n`;
+    });
+
+    const total = entries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    text += `\nTil overs: ${total}kr\n`;
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "budsjett.txt";
+    a.click();
+}
+
+// --- Opprett eksport-knapp kun på desktop ---
+function setupExportBtn() {
+    // skjul eksisterende knapp hvis resize fra desktop -> mobil
+    const existingBtn = document.getElementById("exportBtn");
+    if (existingBtn) existingBtn.remove();
+
+    if (window.innerWidth > 768) { // desktop
+        const btn = document.createElement("button");
+        btn.id = "exportBtn";
+        btn.textContent = "Eksporter til tekstfil";
+        btn.style.margin = "10px";
+        btn.addEventListener("click", exportEntriesToTextFile);
+
+        // Legg knappen over tabellen
+        tableEl?.parentElement?.insertBefore(btn, tableEl);
+    }
+}
+
+// Kjør når siden lastes og når vinduet resize's
+setupExportBtn();
+window.addEventListener("resize", setupExportBtn);
+
 // --- Init ---
 renderEntries();
+updateSluttsum();
 updateDetailedView();
