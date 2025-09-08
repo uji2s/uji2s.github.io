@@ -50,18 +50,35 @@ document.addEventListener("DOMContentLoaded", () => {
         if ('serviceWorker' in navigator) {
             try {
                 const registration = await navigator.serviceWorker.getRegistration();
-                if (registration) {
-                    await registration.update();
+                if (!registration) return;
+
+                // Hvis det allerede finnes en ny SW som venter
+                if (registration.waiting) {
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                    return;
                 }
+
+                // Sjekk server for ny SW
+                await registration.update();
+
+                // Hvis ny SW installeres
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload();
+                        }
+                    });
+                });
             } catch (err) {
                 console.error("Feil ved force update:", err);
-                alert("Kunne ikke sjekke oppdatering");
             }
-        } else {
-            alert("Service Worker ikke støttet i denne nettleseren");
         }
     });
 });
+
 
 function saveStorage() {
     const serializable = entries.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date }));
