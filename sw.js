@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budsjett-cache-v1.081'; // øk versjon for å invalidere gammel cache
+const CACHE_NAME = 'budsjett-cache-v1.082'; // øk versjon for å invalidere gammel cache
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

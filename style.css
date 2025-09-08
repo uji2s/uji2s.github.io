@@ -134,10 +134,20 @@ th, td{
     flex-direction: column;
     gap: 5px;
 
-    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); /* tar hensyn til notch og statusbar */
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow-y: auto;       /* scroll kun vertikalt */
     overflow-x: hidden;     /* ingen horisontal scroll */
     -webkit-overflow-scrolling: touch; /* smooth scroll på iOS */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px); /* ekstra plass nederst */
+    box-sizing: border-box;
+}
+
+
+#changelogDisplay pre {
+    white-space: pre-wrap;   /* bryt linjer */
+    word-break: break-word;   /* bryt lange ord */
+    margin: 0;                /* fjern default margin */
 }
 
 #changelogDisplay details{
