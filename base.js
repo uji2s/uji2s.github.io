@@ -22,12 +22,11 @@ const detailedView = document.getElementById("detailedView");
 const showOnlyExpensesDetailed = document.getElementById("showOnlyExpensesDetailed");
 const exportBtn = document.getElementById("exportBtn");
 
-
 const dateInfo = document.getElementById("dateInfo");
 
 let entries = [];
 
-// --- Load entries (safe) ---
+// --- Load entries ---
 const stored = localStorage.getItem("entries");
 if (stored) {
     try {
@@ -44,12 +43,10 @@ if (stored) {
     }
 }
 
+// --- Force update SW ---
 document.addEventListener("DOMContentLoaded", () => {
     const forceBtn = document.getElementById("forceUpdateBtn");
-    if (!forceBtn) {
-        console.warn("DEBUG: Fant ikke Force Update-knappen");
-        return;
-    }
+    if (!forceBtn) return;
 
     forceBtn.addEventListener("click", async () => {
         console.log("DEBUG: Force update knapp trykket");
@@ -63,26 +60,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const registration = await navigator.serviceWorker.getRegistration();
             console.log("DEBUG: Fikk service worker registration:", registration);
 
-            if (!registration) {
-                console.warn("DEBUG: Ingen aktiv service worker funnet");
-                return;
-            }
+            if (!registration) return;
 
-            // --- Test om vi får en helt fersk sw.js ---
-            console.log("DEBUG: Henter sw.js med timestamp for å bypass cache");
-            const swCheck = await fetch(`/sw.js?t=${Date.now()}`, { cache: "no-store" });
+            // Hent sw.js med timestamp for å bypass cache
+            const swCheck = await fetch(`/sw.js?ts=${Date.now()}`, { cache: "no-store" });
             console.log("DEBUG: sw.js fetch status:", swCheck.status);
 
-            if (!swCheck.ok) {
-                console.error("DEBUG: sw.js kunne ikke hentes!");
-                return;
-            }
+            if (!swCheck.ok) return;
 
-            // --- Prøv å oppdatere service workeren ---
-            console.log("DEBUG: Kaller registration.update()");
-            await registration.update({ bypassCache: true });
+            // Oppdater SW
+            await registration.update();
 
-            // Sjekk om det er en ny SW som venter
+            // Hvis det er en ny SW som venter
             if (registration.waiting) {
                 console.log("DEBUG: Ny SW venter, sender SKIP_WAITING");
                 registration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -91,14 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Hvis en ny SW blir funnet under oppdatering
-            console.log("DEBUG: Lytter etter updatefound-event");
             registration.addEventListener('updatefound', () => {
-                console.log("DEBUG: Update found event trigget");
                 const newWorker = registration.installing;
-
                 newWorker.addEventListener('statechange', () => {
-                    console.log("DEBUG: Ny SW state:", newWorker.state);
-
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                         console.log("DEBUG: Ny SW installert, sender SKIP_WAITING");
                         newWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -106,13 +90,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
             });
-
         } catch (err) {
             console.error("DEBUG: Feil ved force update:", err);
         }
     });
 });
 
+// --- Save storage ---
 function saveStorage() {
     const serializable = entries.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date }));
     localStorage.setItem("entries", JSON.stringify(serializable));
@@ -133,33 +117,6 @@ function updateSluttsum() {
     span.textContent = `${formatMoney(sum)} kr`;
     sluttsumEl.appendChild(span);
 }
-
-document.addEventListener("DOMContentLoaded", async () => {
-    const changelogDisplay = document.getElementById("changelogDisplay"); // må matche din popup
-    if (!changelogDisplay) return; // safety check
-    await renderChangelog(changelogDisplay);
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    const clearCacheBtn = document.getElementById("clearCacheBtn");
-    if (!clearCacheBtn) return;
-
-    clearCacheBtn.addEventListener("click", async () => {
-        if ('caches' in window) {
-            try {
-                const cacheNames = await caches.keys();
-                for (const name of cacheNames) {
-                    await caches.delete(name);
-                }
-                // Auto reload etter clearing cache
-                window.location.reload();
-            } catch (err) {
-                console.error("Feil ved clearing cache:", err);
-            }
-        }
-    });
-});
-
 
 // --- Render entries ---
 function renderEntries() {
@@ -186,25 +143,21 @@ function renderEntries() {
 
         const tdActions = document.createElement("td");
 
-        // --- +14d knapp ---
         const btnPlus = document.createElement("button");
         btnPlus.className = "plus14";
         btnPlus.dataset.index = String(index);
         btnPlus.textContent = "+14d";
 
-        // --- Dupliser knapp ---
         const btnDuplicate = document.createElement("button");
         btnDuplicate.className = "duplicate";
         btnDuplicate.dataset.index = String(index);
         btnDuplicate.textContent = "+";
 
-        // --- Fjern knapp ---
         const btnRemove = document.createElement("button");
         btnRemove.className = "remove";
         btnRemove.dataset.index = String(index);
         btnRemove.textContent = "fjern";
 
-        // Legg til alle knappene
         tdActions.appendChild(btnPlus);
         tdActions.appendChild(btnDuplicate);
         tdActions.appendChild(btnRemove);
@@ -221,21 +174,6 @@ function renderEntries() {
     updateSluttsum();
     updateDetailedView();
 }
-
-function duplicateEntry(index) {
-    const original = entries[index];
-    if (!original) return;
-
-    const newEntry = {
-        date: new Date(original.date),
-        desc: original.desc,
-        amount: original.amount
-    };
-
-    entries.splice(index + 1, 0, newEntry);
-    renderEntries();
-}
-
 
 // --- Inline editing ---
 function enableInlineEditing() {
@@ -344,7 +282,6 @@ entryTableBody?.addEventListener("click", (e) => {
     if (!Number.isFinite(idx)) return;
 
     if (btn.classList.contains("plus14")) {
-        // --- +14d logikk ---
         const original = entries[idx];
         if (!original) return;
         const newDate = new Date(original.date);
@@ -352,7 +289,6 @@ entryTableBody?.addEventListener("click", (e) => {
         addEntry(original.desc, original.amount, newDate);
 
     } else if (btn.classList.contains("duplicate")) {
-        // --- Dupliser logikk ---
         const original = entries[idx];
         if (!original) return;
 
@@ -362,23 +298,19 @@ entryTableBody?.addEventListener("click", (e) => {
             amount: original.amount
         };
 
-        // Legg til kopien rett under originalen
         entries.splice(idx + 1, 0, newEntry);
 
-        // Lagre og oppdater UI
         saveStorage();
         renderEntries();
         updateSluttsum();
 
     } else if (btn.classList.contains("remove")) {
-        // --- Fjern logikk ---
         entries.splice(idx, 1);
         saveStorage();
         renderEntries();
         updateSluttsum();
     }
 });
-
 
 [nameInput, amountInput, dateInput].forEach(input => {
     input?.addEventListener("keydown", (e) => { if (e.key === "Enter") addEntry(); });
@@ -414,7 +346,6 @@ function updateDetailedView() {
     const dailyTotals = {};
     let runningTotal = 0;
 
-    // Sorter alle entries etter dato
     const sorted = [...entries].sort((a, b) => a.date - b.date);
 
     sorted.forEach(entry => {
@@ -423,17 +354,14 @@ function updateDetailedView() {
 
         if (!dailyTotals[dayStr]) {
             dailyTotals[dayStr] = {
-                all: null,      // total saldo etter alle transaksjoner
-                expensesOnly: null // saldo etter bare utgifter
+                all: null,
+                expensesOnly: null
             };
         }
 
-        // total saldo
         dailyTotals[dayStr].all = runningTotal;
 
-        // Hvis denne transaksjonen er en utgift
         if (entry.amount < 0) {
-            // saldo etter at utgiften er betalt
             dailyTotals[dayStr].expensesOnly = runningTotal;
         }
     });
@@ -444,7 +372,6 @@ function updateDetailedView() {
         const data = dailyTotals[day];
         let val = onlyExpenses ? data.expensesOnly : data.all;
 
-        // hopp over hvis det ikke finnes utgifter den dagen
         if (onlyExpenses && val === null) continue;
 
         const color = val > 0 ? "green" : val < 0 ? "red" : "yellow";
@@ -455,7 +382,6 @@ function updateDetailedView() {
     }
 }
 
-
 showOnlyExpensesDetailed?.addEventListener("change",updateDetailedView);
 
 // --- Popup / Help / Changelog ---
@@ -464,7 +390,7 @@ helpBtn?.addEventListener("click",()=>{
     popup.style.display="flex";
     renderHelpText();
     if(!changelogLoaded){
-        renderChangelog();
+        renderChangelog(changelogDisplay);
         changelogLoaded=true;
     }
 });
@@ -474,26 +400,23 @@ function renderHelpText(){
     if(!helpContainer) return;
     helpContainer.innerHTML=`
         <h2>hvordan bruke kalkulatoren?</h2>
-        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
-        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
-        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu.</p>
-        <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
-        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
-        <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
+        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til...</p>
+        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem...</p>
+        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen...</p>
+        <p><strong>detailed view:</strong> denne visningen viser saldoen din...</p>
+        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer...</p>
+        <p><strong>historikk:</strong> alle oppføringer lagres automatisk...</p>
     `;
 }
 
 async function renderChangelog(changelogDisplay) {
     if (!changelogDisplay) return;
-
     try {
         const res = await fetch("changelog.md");
         if(!res.ok) return;
-
         const text = await res.text();
         changelogDisplay.innerHTML = "";
 
-        // Finn siste oppdateringsdato
         const dateRegex = /\[(\d{2})-(\d{2})-(\d{4})\]/g;
         let latestDate = null;
         let match;
@@ -503,191 +426,27 @@ async function renderChangelog(changelogDisplay) {
             if (!latestDate || dt > latestDate) latestDate = dt;
         }
 
-        // --- sist oppdatert over dropdown ---
         if (latestDate) {
             const lastUpdated = document.createElement("p");
-            lastUpdated.textContent = `Sist oppdatert: ${formatDateReadable(latestDate)} | ${getCurrentTimeString()}`;
-            lastUpdated.style.fontWeight = "bold";
-            changelogDisplay.insertBefore(lastUpdated, changelogDisplay.firstChild);
+            lastUpdated.textContent = `Sist oppdatert: ${formatDateReadable(latestDate,true)}`;
+            changelogDisplay.appendChild(lastUpdated);
         }
 
-        // Legg til selve changelog-innholdet (detaljer)
-        text.split(/^###\s+/m).slice(1).forEach(section=>{
-            const [title, ...lines] = section.split("\n");
-            const details = document.createElement("details");
-            const summary = document.createElement("summary");
-            summary.textContent = title;
-            details.appendChild(summary);
-            lines.forEach(line=>{
-                if(line.trim()==="") return;
-                const pre = document.createElement("pre");
-                pre.textContent = line;
-                details.appendChild(pre);
-            });
-            changelogDisplay.appendChild(details);
-        });
+        const pre = document.createElement("pre");
+        pre.textContent = text;
+        changelogDisplay.appendChild(pre);
 
     } catch(err){
-        console.error("Kunne ikke lese changelog:", err);
+        console.error("feil ved innlasting changelog:",err);
     }
 }
 
-
-// --- Date / Time ---
-function updateDateTime(){
-    const now=new Date();
-    //if(dateInfo) dateInfo.textContent=`dagens dato: ${formatDate(now)}`;
-    const dateDisplay=document.getElementById("dateDisplay");
-    const timeDisplay=document.getElementById("timeDisplay");
-    if(dateDisplay) dateDisplay.textContent=formatDateReadable(now);
-    if(timeDisplay) timeDisplay.textContent=getCurrentTimeString();
-}
-setInterval(updateDateTime,1000);
-updateDateTime();
-
-// --- Sort ---
-const sortSelect=document.getElementById("sortSelect");
-sortSelect?.addEventListener("change",()=>{
-    const val=sortSelect.value;
-    if(val==="date") entries.sort((a,b)=>a.date-b.date);
-    if(val==="amount") entries.sort((a,b)=>Number(a.amount)-Number(b.amount));
-    renderEntries();
+closePopupBtn?.addEventListener("click",()=>{popup.style.display="none";});
+clearCacheBtn?.addEventListener("click",()=>{
+    localStorage.clear();
+    window.location.reload();
 });
 
-// --- Popup funksjoner ---
-function openPopup() {
-    if (!popup) return;
-    popup.style.display = "flex";
-}
-
-function closePopup() {
-    if (!popup) return;
-    popup.style.display = "none";
-}
-
-// Åpne popup når ? trykkes
-helpBtn?.addEventListener("click", () => {
-    openPopup();
-});
-
-// Lukk popup når lukk-knapp trykkes
-closePopupBtn?.addEventListener("click", () => {
-    closePopup();
-});
-
-// Lukk popup ved å klikke utenfor innholdet
-popup?.addEventListener("click", (e) => {
-    if (e.target === popup) {
-        closePopup();
-    }
-});
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(reg => {
-      console.log('SW registered', reg);
-
-      // Lytt etter nye SW-versjoner
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed') {
-            if (navigator.serviceWorker.controller) {
-              // Ny oppdatering tilgjengelig
-              showUpdateBanner();
-            }
-          }
-        });
-      });
-    })
-    .catch(err => console.error('SW registration failed:', err));
-}
-
-// --- Show popup on first visit ---
-if (!localStorage.getItem("visitedHelpPopup")) {
-    openPopup();
-    localStorage.setItem("visitedHelpPopup", "true");
-}
-
-document.getElementById('helpBtn').addEventListener('click', () => {
-    document.getElementById('popup').classList.add('show');
-});
-
-document.getElementById('closePopupBtn').addEventListener('click', () => {
-    document.getElementById('popup').classList.remove('show');
-});
-
-function showUpdateBanner() {
-  if(document.getElementById('updateBanner')) return; // already showing
-
-  const banner = document.createElement('div');
-  banner.id = 'updateBanner';
-  banner.textContent = 'Ny oppdatering tilgjengelig – klikk for å laste på nytt';
-  banner.style.cssText = `
-    position: fixed;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #00aaff;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 9999;
-    font-weight: bold;
-  `;
-  banner.addEventListener('click', () => location.reload());
-  document.body.appendChild(banner);
-}
-
-// --- Eksporter til tekstfil ---
-function exportEntriesToTextFile() {
-    if (entries.length === 0) {
-        alert("Ingen oppføringer å eksportere.");
-        return;
-    }
-
-    let text = "";
-    entries.forEach((entry, index) => {
-        const month = entry.date.toLocaleString("no-NO", { month: "short" });
-        const amount = Number(entry.amount || 0);
-        text += `${index + 1}. ${month} | ${entry.desc} | ${amount > 0 ? "" : "-"}${Math.abs(amount)}kr\n`;
-    });
-
-    const total = entries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
-    text += `\nTil overs: ${total}kr\n`;
-
-    const blob = new Blob([text], { type: "text/plain" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "budsjett.txt";
-    a.click();
-}
-
-// --- Opprett eksport-knapp kun på desktop ---
-function setupExportBtn() {
-    // skjul eksisterende knapp hvis resize fra desktop -> mobil
-    const existingBtn = document.getElementById("exportBtn");
-    if (existingBtn) existingBtn.remove();
-
-    if (window.innerWidth > 768) { // desktop
-        const btn = document.createElement("button");
-        btn.id = "exportBtn";
-        btn.textContent = "Eksporter til tekstfil";
-        btn.style.margin = "10px";
-        btn.addEventListener("click", exportEntriesToTextFile);
-
-        // Legg knappen over tabellen
-        tableEl?.parentElement?.insertBefore(btn, tableEl);
-    }
-}
-
-// Kjør når siden lastes og når vinduet resize's
-setupExportBtn();
-window.addEventListener("resize", setupExportBtn);
-
-
-// --- Initial render ---
+// --- Init ---
 renderEntries();
-updateSluttsum();
 updateDetailedView();

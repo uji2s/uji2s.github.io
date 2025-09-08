@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budsjett-cache-v1.17'; // øk versjon for å invalidere gammel cache
+const CACHE_NAME = 'budsjett-cache-v1.19'; // øk versjon for å invalidere gammel cache
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -11,6 +11,9 @@ const ASSETS_TO_CACHE = [
   '/sponsor.png',
   '/changelog.md'
 ];
+
+console.log("DEBUG: SW version:", CACHE_NAME);
+
 
 // --- Install: cache everything ---
 self.addEventListener('install', (e) => {
@@ -77,4 +80,11 @@ self.addEventListener('message', async (e) => {
     await Promise.all(keys.map(k => caches.delete(k)));
     console.log('[SW] Cleared all caches');
   }
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        console.log("SW: Mottok SKIP_WAITING, aktiverer ny SW");
+        self.skipWaiting();
+    }
 });
