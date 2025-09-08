@@ -78,6 +78,13 @@ function updateSluttsum() {
     sluttsumEl.appendChild(span);
 }
 
+document.addEventListener("DOMContentLoaded", async () => {
+    const changelogDisplay = document.getElementById("changelogDisplay"); // må matche din popup
+    if (!changelogDisplay) return; // safety check
+    await renderChangelog(changelogDisplay);
+});
+
+
 // --- Render entries ---
 function renderEntries() {
     if (!tableEl || !entryTableBody) return;
@@ -350,13 +357,14 @@ function renderHelpText(){
     `;
 }
 
-async function renderChangelog() {
+async function renderChangelog(changelogDisplay) {
+    if (!changelogDisplay) return;
+
     try {
         const res = await fetch("changelog.md");
         if(!res.ok) return;
 
         const text = await res.text();
-        if(!changelogDisplay) return;
         changelogDisplay.innerHTML = "";
 
         // Finn siste oppdateringsdato
@@ -370,15 +378,12 @@ async function renderChangelog() {
         }
 
         // --- sist oppdatert over dropdown ---
-        if (latestDate)
-        {
+        if (latestDate) {
             const lastUpdated = document.createElement("p");
             lastUpdated.textContent = `Sist oppdatert: ${formatDateReadable(latestDate)} | ${getCurrentTimeString()}`;
             lastUpdated.style.fontWeight = "bold";
             changelogDisplay.insertBefore(lastUpdated, changelogDisplay.firstChild);
         }
-
-
 
         // Legg til selve changelog-innholdet (detaljer)
         text.split(/^###\s+/m).slice(1).forEach(section=>{
