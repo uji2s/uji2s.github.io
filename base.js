@@ -26,6 +26,14 @@ const dateInfo = document.getElementById("dateInfo");
 
 let entries = [];
 
+// --- Restore entries if temp exists ---
+const tempEntries = localStorage.getItem("entries_temp");
+if(tempEntries) {
+    localStorage.setItem("entries", tempEntries);
+    localStorage.removeItem("entries_temp");
+}
+
+
 // --- Load entries ---
 const stored = localStorage.getItem("entries");
 if (stored) {
@@ -43,6 +51,16 @@ if (stored) {
     }
 }
 
+navigator.serviceWorker?.addEventListener('message', event => {
+    if(event.data?.type === 'REQUEST_ENTRIES') {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'ENTRIES_DATA',
+            entries: localStorage.getItem("entries")
+        });
+    }
+});
+
+
 // --- Force update SW ---
 document.addEventListener("DOMContentLoaded", () => {
     const forceBtn = document.getElementById("forceUpdateBtn");
@@ -51,47 +69,33 @@ document.addEventListener("DOMContentLoaded", () => {
     forceBtn.addEventListener("click", async () => {
         console.log("DEBUG: Force update knapp trykket");
 
-        if (!('serviceWorker' in navigator)) {
-            console.warn("DEBUG: Service workers ikke støttet i denne nettleseren");
-            return;
-        }
+        if (!('serviceWorker' in navigator)) return;
 
         try {
+            // Lagre entries midlertidig
+            const entriesData = localStorage.getItem("entries");
+            if (!entriesData) console.warn("Ingen entries funnet til midlertidig lagring");
+
+            // Hent SW-registrering
             const registration = await navigator.serviceWorker.getRegistration();
-            console.log("DEBUG: Fikk service worker registration:", registration);
-
-            if (!registration) return;
-
-            // Hent sw.js med timestamp for å bypass cache
-            const swCheck = await fetch(`/sw.js?ts=${Date.now()}`, { cache: "no-store" });
-            console.log("DEBUG: sw.js fetch status:", swCheck.status);
-
-            if (!swCheck.ok) return;
-
-            // Oppdater SW
-            await registration.update();
-
-            // Hvis det er en ny SW som venter
-            if (registration.waiting) {
-                console.log("DEBUG: Ny SW venter, sender SKIP_WAITING");
-                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
+            if (!registration || !registration.active) {
+                console.warn("Ingen aktiv SW registrert");
                 return;
             }
 
-            // Hvis en ny SW blir funnet under oppdatering
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("DEBUG: Ny SW installert, sender SKIP_WAITING");
-                        newWorker.postMessage({ type: 'SKIP_WAITING' });
-                        window.location.reload();
-                    }
-                });
-            });
+            // Send FORCE_UPDATE melding til SW
+            registration.active.postMessage({ type: 'FORCE_UPDATE' });
+
+            // Oppdater SW (prøver å hente ny versjon)
+            await registration.update();
+
+            // Behold entries etter reload
+            localStorage.setItem("entries_temp", entriesData);
+
+            // Reload siden for å bruke ny SW
+            window.location.reload();
         } catch (err) {
-            console.error("DEBUG: Feil ved force update:", err);
+            console.error("Feil under force update:", err);
         }
     });
 });
@@ -490,9 +494,10 @@ async function renderChangelog(changelogDisplay) {
 }
 
 closePopupBtn?.addEventListener("click",()=>{popup.style.display="none";});
-clearCacheBtn?.addEventListener("click",()=>{
-    localStorage.clear();
-    window.location.reload();
+clearCacheBtn?.addEventListener("click", () => {
+    if(confirm("Er du sikker på at du vil slette ALL cache inkludert tabellen?")) {
+        navigator.serviceWorker.controller?.postMessage('CLEAR_CACHE');
+    }
 });
 
 function showUpdateBanner() {

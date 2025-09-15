@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budsjett-cache-v1.2'; // øk versjon for å invalidere gammel cache
+const CACHE_NAME = 'budsjett-cache-v1.3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -12,79 +12,70 @@ const ASSETS_TO_CACHE = [
   '/changelog.md'
 ];
 
-console.log("DEBUG: SW version:", CACHE_NAME);
-
-
 // --- Install: cache everything ---
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
-  );
+  console.log('[SW] Installing...');
+  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE)));
   self.skipWaiting(); // activate immediately
 });
 
 // --- Activate: remove old caches ---
 self.addEventListener('activate', (e) => {
+  console.log('[SW] Activating...');
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      )
+      Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))
     )
   );
   self.clients.claim();
 });
 
-// --- Fetch: serve cached first, fallback to network ---
+// --- Fetch: cache first, fallback to network ---
 self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-
-  // Ignore non-HTTP requests (e.g., chrome-extension://)
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return;
-  }
-
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) {
-        return cached;
-      }
-
-      return fetch(e.request).then(networkRes => {
-        // Only cache GET requests and successful responses
+    caches.match(e.request)
+      .then(cached => cached || fetch(e.request).then(networkRes => {
         if (e.request.method === 'GET' && networkRes && networkRes.status === 200) {
-          const responseClone = networkRes.clone(); // clone BEFORE returning
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(e.request, responseClone);
-          });
+          const clone = networkRes.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
-
-        return networkRes; // return original response to the browser
-      });
-    }).catch(() => {
-      // Fallback if offline and not cached
-      if (e.request.destination === 'document') {
-        return caches.match('/');
-      }
-    })
+        return networkRes;
+      }))
+      .catch(() => e.request.destination === 'document' ? caches.match('/') : undefined)
   );
 });
 
+// --- Message handling ---
+self.addEventListener('message', async (event) => {
+  const clients = await self.clients.matchAll();
 
-// --- Optional: listen for message to clear cache from page ---
-self.addEventListener('message', async (e) => {
-  if (e.data === 'CLEAR_CACHE') {
+  // Clear all caches
+  if (event.data === 'CLEAR_CACHE') {
+    console.log('[SW] CLEAR_CACHE received');
     const keys = await caches.keys();
     await Promise.all(keys.map(k => caches.delete(k)));
-    console.log('[SW] Cleared all caches');
+    console.log('[SW] All caches cleared');
+    // reload all clients
+    clients.forEach(c => c.navigate(c.url));
   }
-});
 
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        console.log("SW: Mottok SKIP_WAITING, aktiverer ny SW");
-        self.skipWaiting();
-    }
+  // Force update: new SW takes over
+  if (event.data?.type === 'FORCE_UPDATE') {
+    console.log('[SW] FORCE_UPDATE received');
+    self.skipWaiting(); // activate new SW immediately
+  }
+
+  // Skip waiting (generic)
+  if (event.data?.type === 'SKIP_WAITING') {
+    console.log('[SW] SKIP_WAITING received');
+    self.skipWaiting();
+  }
+
+  // Respond to entries request
+  if (event.data?.type === 'REQUEST_ENTRIES') {
+    const stored = await event.source?.postMessage({
+      type: 'ENTRIES_DATA',
+      entries: localStorage.getItem ? localStorage.getItem("entries") : null
+    });
+  }
 });
