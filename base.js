@@ -212,14 +212,36 @@ function enableInlineEditing() {
             renderEntries();
         };
 
-        const finishAmount = (input)=>{
-            let val = input.value.replace(/[^\d.-]/g,"").trim();
-            let num = parseFloat(val);
-            if(isNaN(num)) num = entries[index].amount;
+        const finishAmount = (input) => {
+        let val = input.value.trim();
+        let num;
+
+            if(val.startsWith('++')) {
+                // Legg til fra current amount
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) + delta);
+
+            } else if(val.startsWith('--')) {
+                // Trekk fra current amount
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) - delta);
+
+            } else if(val.startsWith('-')) {
+                // Sett til negativ verdi direkte
+                num = parseFloat(val.replace(/[^0-9.-]/g,""));
+                if(isNaN(num)) num = Number(entries[index].amount);
+
+            } else {
+                // Sett til positiv verdi direkte
+                num = parseFloat(val.replace(/[^0-9.]/g,""));
+                if(isNaN(num)) num = Number(entries[index].amount);
+            }
+
             entries[index].amount = num;
             saveStorage();
             renderEntries();
         };
+
 
         const setupInline = (td,finishFn)=>{
             td.addEventListener("click",()=>{
@@ -398,15 +420,24 @@ helpBtn?.addEventListener("click",()=>{
 function renderHelpText(){
     const helpContainer=document.getElementById("helpDisplay");
     if(!helpContainer) return;
-    helpContainer.innerHTML=`
-        <h2>hvordan bruke kalkulatoren?</h2>
-        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
-        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
-        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu.</p>
-        <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
-        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
-        <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
-    `;
+    helpContainer.innerHTML = `
+    <h2>hvordan bruke kalkulatoren?</h2>
+    <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
+    <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem ved å trykke +14d-knappen. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
+    <p><strong>(+):</strong> dupliser oppføringen én gang på samme dato eller like etter, uten å endre datoen med 14 dager. Praktisk for å lage flere like poster raskt.</p>
+    <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu. Du kan nå også:</p>
+    <ul>
+        <li>Redigere beløp direkte.</li>
+        <li>Bruke <strong>++500</strong> for å legge til 500 på eksisterende verdi.</li>
+        <li>Bruke <strong>--500</strong> for å trekke fra 500 på eksisterende verdi.</li>
+        <li>Bruke <strong>-500</strong> for å sette verdien direkte til negativ.</li>
+        <li>Bruke <strong>500</strong> for å sette verdien direkte til positiv.</li>
+        <li>Fjerne eller legge til verdi inline uten å åpne nytt vindu.</li>
+    </ul>
+    <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
+    <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
+    <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
+`;
 }
 
 async function renderChangelog(changelogDisplay) {
