@@ -181,11 +181,11 @@ function renderEntries() {
 
 // --- Inline editing ---
 function enableInlineEditing() {
-    entryTableBody.querySelectorAll("tr").forEach((tr,index)=>{
+    entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
         const tdDate = tr.children[0];
         const tdAmount = tr.children[2];
 
-        const createInput = (val,type="text")=>{
+        const createInput = (val, type="text") => {
             const input = document.createElement("input");
             input.type = type;
             input.value = "";
@@ -194,50 +194,51 @@ function enableInlineEditing() {
             return input;
         };
 
-        const finishDate = (input)=>{
+        const finishDate = (input) => {
             let val = input.value.trim();
             let newDate = parseDate(val);
-            if(!newDate){
+            if (!newDate) {
                 const today = new Date();
-                const day = parseInt(val,10);
-                if(!isNaN(day)) newDate = new Date(today.getFullYear(),today.getMonth(),day);
+                const day = parseInt(val, 10);
+                if (!isNaN(day)) newDate = new Date(today.getFullYear(), today.getMonth(), day);
                 else newDate = entries[index].date;
             }
 
             const oldMonth = entries[index].date.getMonth();
             const newMonth = newDate.getMonth();
-            if(newMonth!==oldMonth){
-                for(let i=index+1;i<entries.length;i++){
-                    entries[i].date.setMonth(entries[i].date.getMonth()+(newMonth-oldMonth));
+            if (newMonth !== oldMonth) {
+                for (let i = index + 1; i < entries.length; i++) {
+                    entries[i].date.setMonth(entries[i].date.getMonth() + (newMonth - oldMonth));
                 }
             }
+
             entries[index].date = newDate;
             saveStorage();
             renderEntries();
         };
 
         const finishAmount = (input) => {
-        let val = input.value.trim();
-        let num;
+            let val = input.value.trim();
+            let num;
 
-            if(val.startsWith('++')) {
-                // Legg til fra current amount
-                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
-                num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) + delta);
+            // Bytt em dash til vanlig --
+            val = val.replace(/—/g, '--');
 
-            } else if(val.startsWith('--') || val.startsWith('—')) { // støtter iPhone/Mac "em dash"
-            const delta = parseFloat(val.replace(/^(-{2}|—)/,"").replace(/[^0-9.]/g,""));
-            num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) - delta);
+            if (val.startsWith('++')) {
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g, ""));
+                num = isNaN(delta) ? Number(entries[index].amount) : Number(entries[index].amount) + delta;
 
-            } else if(val.startsWith('-')) {
-                // Sett til negativ verdi direkte
-                num = parseFloat(val.replace(/[^0-9.-]/g,""));
-                if(isNaN(num)) num = Number(entries[index].amount);
+            } else if (val.startsWith('--')) {
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g, ""));
+                num = isNaN(delta) ? Number(entries[index].amount) : Number(entries[index].amount) - delta;
+
+            } else if (val.startsWith('-')) {
+                num = parseFloat(val.replace(/[^0-9.-]/g, ""));
+                if (isNaN(num)) num = Number(entries[index].amount);
 
             } else {
-                // Sett til positiv verdi direkte
-                num = parseFloat(val.replace(/[^0-9.]/g,""));
-                if(isNaN(num)) num = Number(entries[index].amount);
+                num = parseFloat(val.replace(/[^0-9.]/g, ""));
+                if (isNaN(num)) num = Number(entries[index].amount);
             }
 
             entries[index].amount = num;
@@ -245,20 +246,19 @@ function enableInlineEditing() {
             renderEntries();
         };
 
-
-        const setupInline = (td,finishFn)=>{
-            td.addEventListener("click",()=>{
-                if(td.querySelector("input")) return;
+        const setupInline = (td, finishFn) => {
+            td.addEventListener("click", () => {
+                if (td.querySelector("input")) return;
                 const initialVal = td.textContent;
                 const input = createInput(initialVal);
-                td.textContent="";
+                td.textContent = "";
                 td.appendChild(input);
                 input.focus();
 
-                const doFinish = ()=>{ finishFn(input); };
-                input.addEventListener("blur",doFinish);
-                input.addEventListener("keydown",(e)=>{
-                    if(e.key==="Enter"||e.keyCode===13){
+                const doFinish = () => { finishFn(input); };
+                input.addEventListener("blur", doFinish);
+                input.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.keyCode === 13) {
                         e.preventDefault();
                         input.blur();
                     }
@@ -266,8 +266,8 @@ function enableInlineEditing() {
             });
         };
 
-        setupInline(tdDate,finishDate);
-        setupInline(tdAmount,finishAmount);
+        setupInline(tdDate, finishDate);
+        setupInline(tdAmount, (input) => finishAmount(input)); // index fanges via closure
     });
 }
 
