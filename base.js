@@ -225,10 +225,9 @@ function enableInlineEditing() {
                 const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
                 num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) + delta);
 
-            } else if(val.startsWith('--')) {
-                // Trekk fra current amount
-                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
-                num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) - delta);
+            } else if(val.startsWith('--') || val.startsWith('—')) { // støtter iPhone/Mac "em dash"
+            const delta = parseFloat(val.replace(/^(-{2}|—)/,"").replace(/[^0-9.]/g,""));
+            num = isNaN(delta) ? Number(entries[index].amount) : (Number(entries[index].amount) - delta);
 
             } else if(val.startsWith('-')) {
                 // Sett til negativ verdi direkte
