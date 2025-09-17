@@ -1,104 +1,88 @@
 #!/bin/bash
-# gen_changelog_macos.sh
-# Lager changelog.md på MacOS med [dd-mm-yyyy] format
-# Ignorerer commits som starter med "update"
+# gen_changelog_final.sh
 
 outFile="changelog.md"
 > "$outFile"
 
-# --- Definer keywords per kategori ---
-changed_keywords="fix update changed refactor cleanup added feat"
-fixed_keywords="bug error fix correct"
-removed_keywords="delete remove"
+fixed_keywords="fix error"
+removed_keywords="delete remove bug"
 
-# --- Hent git log ---
-log=$(git log --pretty=format:"%ad|%s|%B" --date=short)
+# Hent hele log med unik separator
+SEP="__GITCOMMITSEP__"
+log=$(git log --pretty=format:"%ad|%s|%b${SEP}" --date=short)
 
-# --- Del opp commits ---
-IFS=$'\n'
-commits=($log)
-unset IFS
+# --- Del opp commits --- 
+# Vi bruker ikke array, men while-read for å ikke splitte linjer
+echo "$log" | tr "$SEP" '\n' | while IFS= read -r entry; do
+    entry=$(echo "$entry" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -z "$entry" ] && continue
 
-# --- Opprett arrays ---
-changed_commits=()
-fixed_commits=()
-removed_commits=()
+    date=$(echo "$entry" | cut -d'|' -f1)
+    subject=$(echo "$entry" | cut -d'|' -f2 | xargs)
+    body=$(echo "$entry" | cut -d'|' -f3- | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g' | xargs)
 
-for entry in "${commits[@]}"; do
-  date=$(echo "$entry" | cut -d'|' -f1)
-  subject=$(echo "$entry" | cut -d'|' -f2 | xargs)
-  body=$(echo "$entry" | cut -d'|' -f3- | sed '/^\s*$/d' | sed "s/^$subject$//")
-
-  # --- Hopp over hvis subject starter med "update" ---
-  lower_subject=$(echo "$subject" | tr '[:upper:]' '[:lower:]')
-  if [[ "$lower_subject" == update* ]]; then
-    continue
-  fi
-
-  # --- Formater dato til dd-mm-yyyy ---
-  if dateParsed=$(date -j -f "%Y-%m-%d" "$date" "+%d-%m-%Y" 2>/dev/null); then
-    dateStr="$dateParsed"
-  else
-    dateStr="$date"
-  fi
-
-  # --- Finn kategori ---
-  cat="Changed"
-
-  for kw in $changed_keywords; do
-    if echo "$lower_subject" | grep -q "$kw"; then
-      cat="Changed"
-      break
+    # hopp over commits uten gyldig dato
+    if ! [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        continue
     fi
-  done
-  for kw in $fixed_keywords; do
-    if echo "$lower_subject" | grep -q "$kw"; then
-      cat="Fixed"
-      break
-    fi
-  done
-  for kw in $removed_keywords; do
-    if echo "$lower_subject" | grep -q "$kw"; then
-      cat="Removed"
-      break
-    fi
-  done
 
-  # --- Formater commit med dato ---
-  commitLine="- [$dateStr] $subject"
-  if [ -n "$body" ]; then
-    while IFS= read -r line; do
-      [ -z "$line" ] && continue
-      commitLine="$commitLine
-    $line"
-    done <<<"$body"
-  fi
+    # hopp over update*
+    lower_subject=$(echo "$subject" | tr '[:upper:]' '[:lower:]')
+    [[ "$lower_subject" == update* ]] && continue
 
-  # --- Legg til i riktig kategori ---
-  case "$cat" in
-    "Changed") changed_commits+=("$commitLine") ;;
-    "Fixed") fixed_commits+=("$commitLine") ;;
-    "Removed") removed_commits+=("$commitLine") ;;
-  esac
+    # format date
+    dateStr=$(date -j -f "%Y-%m-%d" "$date" "+%d-%m-%Y" 2>/dev/null || echo "$date")
+
+    # kategori
+    cat="Changed"
+    for kw in $removed_keywords; do
+        if echo "$lower_subject" | grep -iq "$kw"; then
+            cat="Removed/Bugs"
+            break
+        fi
+    done
+    if [[ "$cat" == "Changed" ]]; then
+        for kw in $fixed_keywords; do
+            if echo "$lower_subject" | grep -iq "$kw"; then
+                cat="Fixed"
+                break
+            fi
+        done
+    fi
+
+    # lag commit-line på én linje
+    if [ -n "$body" ]; then
+        commitLine="- [$dateStr] $subject: $body"
+    else
+        commitLine="- [$dateStr] $subject"
+    fi
+
+    # skriv til midlertidig fil per kategori
+    case "$cat" in
+        "Changed") echo "$commitLine" >> changed.tmp ;;
+        "Fixed") echo "$commitLine" >> fixed.tmp ;;
+        "Removed/Bugs") echo "$commitLine" >> removed.tmp ;;
+    esac
 done
 
-# --- Skriv changelog ---
-for cat in "Changed" "Fixed" "Removed"; do
-  case "$cat" in
-    "Changed") arr=("${changed_commits[@]}") ;;
-    "Fixed") arr=("${fixed_commits[@]}") ;;
-    "Removed") arr=("${removed_commits[@]}") ;;
-  esac
+# sorter synkende
+sort -r changed.tmp > changed_sorted.tmp
+sort -r fixed.tmp > fixed_sorted.tmp
+sort -r removed.tmp > removed_sorted.tmp
 
-  if [ ${#arr[@]} -eq 0 ]; then
-    continue
-  fi
+write_category() {
+    local title=$1
+    local file=$2
+    [ ! -s "$file" ] && return
+    echo "### $title" >> "$outFile"
+    cat "$file" >> "$outFile"
+    echo "" >> "$outFile"
+}
 
-  echo "### $cat" >> "$outFile"
-  for c in "${arr[@]}"; do
-    echo "$c" >> "$outFile"
-  done
-  echo "" >> "$outFile"
-done
+write_category "Changed" changed_sorted.tmp
+write_category "Fixed" fixed_sorted.tmp
+write_category "Removed/Bugs" removed_sorted.tmp
+
+rm -f *.tmp
 
 echo "Changelog generated to $outFile"
