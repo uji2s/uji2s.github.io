@@ -185,213 +185,108 @@ function renderEntries() {
 
 // --- Inline editing ---
 function enableInlineEditing() {
-    if (!entryTableBody) return;
-    // sørg for at vi kun initialiserer én gang
-    if (entryTableBody.dataset.inlineInit) return;
-    entryTableBody.dataset.inlineInit = "1";
+    entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
+        const tdDate = tr.children[0];
+        const tdAmount = tr.children[2];
 
-    let currentEdit = null; // { td, input, idx, isDate, isAmount, isDesc, onDocPointer }
+        const createInput = (placeholder) => {
+            const input = document.createElement("input");
+            input.type = "text";  // plain text for Safari kompatibilitet
+            input.value = "";
+            input.placeholder = placeholder;
+            input.className = "inline-edit-input";
+            return input;
+        };
 
-    const dateToDayString = d => (d instanceof Date) ? String(d.getDate()) : "";
+        const finishDate = (input) => {
+            let val = input.value.trim();
+            let original = entries[index].date;
+            let newDate = parseDate(val); // utils-funksjon for parsing
 
-    const toISO = d => {
-        if (!(d instanceof Date)) d = new Date(d);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
-    };
-
-    const parseDateInput = (val, fallbackIdx) => {
-        val = (val || "").trim();
-        if (!val) {
-            const t = new Date();
-            t.setHours(0,0,0,0);
-            return t;
-        }
-        // ISO yyyy-mm-dd
-        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-            const d = new Date(val);
-            if (!isNaN(d)) { d.setHours(0,0,0,0); return d; }
-        }
-        // bare dag: "7" eller "07"
-        if (/^\d{1,2}$/.test(val)) {
-            const day = parseInt(val,10);
-            const today = new Date();
-            const d = new Date(today.getFullYear(), today.getMonth(), day);
-            d.setHours(0,0,0,0);
-            return d;
-        }
-        // fallback: prøv parseDate fra utils hvis tilgjengelig
-        try {
-            const p = parseDate(val);
-            if (p instanceof Date && !isNaN(p)) {
-                p.setHours(0,0,0,0);
-                return p;
+            if (!newDate || isNaN(newDate.getTime())) {
+                newDate = original instanceof Date ? new Date(original) : new Date();
             }
-        } catch (err) { /* ignore */ }
-        // siste fallback: behold gammel dato hvis index finnes
-        if (typeof fallbackIdx === "number" && entries[fallbackIdx] && entries[fallbackIdx].date) {
-            return entries[fallbackIdx].date;
-        }
-        const t = new Date(); t.setHours(0,0,0,0); return t;
-    };
 
-    const finishCurrent = (save = true) => {
-        if (!currentEdit) return;
-        const { td, input, idx, isDate, isAmount, isDesc } = currentEdit;
-        const raw = (input.value || "").trim();
-        // fjern input (for å unbreak fokus/visning)
-        if (td.contains(input)) td.removeChild(input);
+            entries[index].date = newDate;
+        };
 
-        if (!save) {
-            // restore text
-            if (isDate) td.textContent = formatDate(entries[idx].date);
-            else if (isAmount) td.textContent = `${formatMoney(entries[idx].amount)} kr`;
-            else if (isDesc) td.textContent = entries[idx].desc || "";
-            else td.textContent = raw;
-            // cleanup
-            document.removeEventListener('pointerdown', currentEdit.onDocPointer, true);
-            currentEdit = null;
-            return;
-        }
-
-        // SAVE logic
-        if (isDate) {
-            const newDate = parseDateInput(raw, idx);
-            // just like before: if month changed, shift following entries
-            const oldMonth = entries[idx].date.getMonth();
-            const newMonth = newDate.getMonth();
-            if (newMonth !== oldMonth) {
-                for (let i = idx + 1; i < entries.length; i++) {
-                    entries[i].date.setMonth(entries[i].date.getMonth() + (newMonth - oldMonth));
-                }
-            }
-            newDate.setHours(0,0,0,0);
-            entries[idx].date = newDate;
-            td.textContent = formatDate(entries[idx].date);
-
-        } else if (isAmount) {
-            let v = raw.replace(/—/g, "--");
+        const finishAmount = (input) => {
+            let val = input.value.trim().replace(/—/g,'--');
             let num;
-            if (v.startsWith("++")) {
-                const delta = parseFloat(v.slice(2).replace(/[^0-9.]/g, ""));
-                num = isNaN(delta) ? Number(entries[idx].amount) : Number(entries[idx].amount) + delta;
-            } else if (v.startsWith("--")) {
-                const delta = parseFloat(v.slice(2).replace(/[^0-9.]/g, ""));
-                num = isNaN(delta) ? Number(entries[idx].amount) : Number(entries[idx].amount) - delta;
-            } else if (/^\-/.test(v) && !/^\-\-/.test(v)) {
-                num = parseFloat(v.replace(/[^0-9.-]/g, ""));
-                if (isNaN(num)) num = Number(entries[idx].amount);
+
+            if (val.startsWith('++')) {
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? entries[index].amount : entries[index].amount + delta;
+            } else if (val.startsWith('--')) {
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? entries[index].amount : entries[index].amount - delta;
+            } else if (val.startsWith('-')) {
+                num = parseFloat(val.replace(/[^0-9.-]/g,""));
+                if (isNaN(num)) num = entries[index].amount;
             } else {
-                num = parseFloat(v.replace(/[^0-9.]/g, ""));
-                if (isNaN(num)) num = Number(entries[idx].amount);
+                num = parseFloat(val.replace(/[^0-9.]/g,""));
+                if (isNaN(num)) num = entries[index].amount;
             }
-            entries[idx].amount = num;
 
-            // sett datoen til i dag (00:00) når beløp endres
-            const today = new Date(); today.setHours(0,0,0,0);
-            entries[idx].date = today;
+            entries[index].amount = num;
 
-            td.textContent = `${formatMoney(entries[idx].amount)} kr`;
-
-        } else if (isDesc) {
-            entries[idx].desc = raw || "";
-            // valgfritt: sett dato ved endring av beskrivelse også
-            const today = new Date(); today.setHours(0,0,0,0);
-            entries[idx].date = today;
-            td.textContent = entries[idx].desc;
-        } else {
-            td.textContent = raw || "";
-        }
-
-        // persist og re-render
-        saveStorage();
-        // Merk: re-render vil resette dataset-index og DOM – derfor må vi gjøre cleanup før
-        document.removeEventListener('pointerdown', currentEdit.onDocPointer, true);
-        currentEdit = null;
-        renderEntries();
-    };
-
-    // delegert click for å starte edit
-    entryTableBody.addEventListener("click", (e) => {
-        const td = e.target.closest("td");
-        if (!td || !entryTableBody.contains(td)) return;
-        if (!td.classList.contains("editable")) return;
-
-        // hvis allerede edit på denne cella, gjør ingenting
-        if (td.querySelector("input")) return;
-
-        // hvis en annen edit er åpen, lagre den først
-        if (currentEdit) finishCurrent(true);
-
-        const tr = td.closest("tr");
-        if (!tr) return;
-        const idx = Number(tr.dataset.index);
-        if (!Number.isFinite(idx)) return;
-
-        const isDate = td.classList.contains("date-cell");
-        const isAmount = td.classList.contains("amount-cell");
-        const isDesc = td.classList.contains("desc-cell");
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "inline-edit-input";
-        if (isDate) {
-            // vis bare dag-nummer som startverdi (bruk parse-friendly input)
-            input.value = dateToDayString(entries[idx].date) || "";
-            input.placeholder = "DD eller YYYY-MM-DD";
-        } else if (isAmount) {
-            const raw = td.textContent.replace(/kr\s*$/i, "").trim();
-            input.value = raw;
-        } else if (isDesc) {
-            input.value = td.textContent.trim();
-        } else {
-            input.value = td.textContent.trim();
-        }
-
-        td.textContent = "";
-        td.appendChild(input);
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-
-        // dokument-listeener for å oppdage klikk utenfor (capture-phase)
-        const onDocPointer = (ev) => {
-            // hvis klikk var innom input eller td — gjør ingenting
-            if (ev.target === input || td.contains(ev.target)) return;
-            // ellers: avslutt edit (lagre)
-            // use setTimeout for å sikre at blur-event og andre eventer får tid? ikke nødvendig, men trygg:
-            //finishCurrent(true);
-            // vi kaller input.blur() slik at blur -> finishCurrent blir trigget
-            input.blur();
+            // Sett dagens dato når beløp endres
+            entries[index].date = new Date();
         };
 
-        // keydown/blur håndtering
-        const onBlur = () => finishCurrent(true);
-        const onKey = (ke) => {
-            if (ke.key === "Enter") {
-                ke.preventDefault();
-                input.blur(); // trigger onBlur -> finishCurrent
-            } else if (ke.key === "Escape") {
-                ke.preventDefault();
-                finishCurrent(false);
-            }
+        const setupInline = (td, finishFn, isDate=false) => {
+            td.addEventListener("click", () => {
+                if (td.querySelector("input")) return;
+
+                const placeholder = td.textContent;
+                const input = createInput(placeholder);
+
+                td.textContent = "";
+                td.appendChild(input);
+
+                // Autofokus
+                setTimeout(() => input.focus(), 10);
+
+                const finish = () => {
+                    if (input.value.trim() === "") {
+                        if (isDate) {
+                            const original = entries[index].date;
+                            entries[index].date = original instanceof Date ? new Date(original) : new Date();
+                        }
+                    } else {
+                        finishFn(input);
+                    }
+                    saveStorage();
+                    renderEntries();
+                };
+
+                const keyListener = (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        finish();
+                    } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        renderEntries(); // fallback
+                    }
+                };
+
+                input.addEventListener("keydown", keyListener);
+                input.addEventListener("focusout", finish);
+            });
         };
 
-        input.addEventListener("blur", onBlur);
-        input.addEventListener("keydown", onKey);
-        document.addEventListener('pointerdown', onDocPointer, true);
-
-        // lagre currentEdit for cleanup
-        currentEdit = { td, input, idx, isDate, isAmount, isDesc, onDocPointer, onBlur, onKey };
+        setupInline(tdDate, finishDate, true);
+        setupInline(tdAmount, finishAmount, false);
     });
 }
 
+// Patch render
 const originalRenderEntries = renderEntries;
-renderEntries = function(){
+renderEntries = function() {
     originalRenderEntries();
     enableInlineEditing();
 };
+
 
 // --- Add entry ---
 function addEntry(descVal, amountVal, dateVal) {
