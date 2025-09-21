@@ -1,4 +1,7 @@
-const CACHE_NAME = 'budsjett-cache-v1.4';
+const CACHE_VERSION = 'v1.4'; // Øk dette tallet når du endrer noe
+const CACHE_NAME = `budsjett-cache-${CACHE_VERSION}`;
+
+// Versjonsstyrte filer (cache-busting med query params for ikoner)
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -6,42 +9,61 @@ const ASSETS_TO_CACHE = [
   '/base.js',
   '/utils.js',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/sponsor.png',
-  '/changelog.md'
+  '/icon-192.png?v=' + CACHE_VERSION,
+  '/icon-512.png?v=' + CACHE_VERSION,
+  '/sponsor.png?v=' + CACHE_VERSION,
+  '/changelog.md?v=' + CACHE_VERSION
 ];
 
 // --- Install: cache everything ---
 self.addEventListener('install', (e) => {
-  console.log('[SW] Installing...');
-  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE)));
-  self.skipWaiting(); // activate immediately
+  console.log('[SW] Installing new version:', CACHE_VERSION);
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS_TO_CACHE))
+      .then(() => self.skipWaiting()) // tar over med en gang
+  );
 });
 
 // --- Activate: remove old caches ---
 self.addEventListener('activate', (e) => {
-  console.log('[SW] Activating...');
+  console.log('[SW] Activating new version:', CACHE_VERSION);
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))
-    )
+      Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          }
+        })
+      )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// --- Fetch: cache first, fallback to network ---
+// --- Fetch: cache first, then network ---
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request)
-      .then(cached => cached || fetch(e.request).then(networkRes => {
-        if (e.request.method === 'GET' && networkRes && networkRes.status === 200) {
-          const clone = networkRes.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      .then(cached => {
+        if (cached) return cached;
+
+        return fetch(e.request).then(networkRes => {
+          // Bare cache GET-requests med status 200
+          if (e.request.method === 'GET' && networkRes && networkRes.status === 200) {
+            const clone = networkRes.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          }
+          return networkRes;
+        });
+      })
+      .catch(() => {
+        // Fallback hvis offline og dokument ikke finnes
+        if (e.request.destination === 'document') {
+          return caches.match('/');
         }
-        return networkRes;
-      }))
-      .catch(() => e.request.destination === 'document' ? caches.match('/') : undefined)
+      })
   );
 });
 
@@ -55,14 +77,14 @@ self.addEventListener('message', async (event) => {
     const keys = await caches.keys();
     await Promise.all(keys.map(k => caches.delete(k)));
     console.log('[SW] All caches cleared');
-    // reload all clients
     clients.forEach(c => c.navigate(c.url));
   }
 
-  // Force update: new SW takes over
+  // Force update: new SW takes over and reloads clients
   if (event.data?.type === 'FORCE_UPDATE') {
     console.log('[SW] FORCE_UPDATE received');
-    self.skipWaiting(); // activate new SW immediately
+    await self.skipWaiting();
+    clients.forEach(c => c.navigate(c.url));
   }
 
   // Skip waiting (generic)
