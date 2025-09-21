@@ -26,6 +26,14 @@ const dateInfo = document.getElementById("dateInfo");
 
 let entries = [];
 
+// --- Restore entries if temp exists ---
+const tempEntries = localStorage.getItem("entries_temp");
+if(tempEntries) {
+    localStorage.setItem("entries", tempEntries);
+    localStorage.removeItem("entries_temp");
+}
+
+
 // --- Load entries ---
 const stored = localStorage.getItem("entries");
 if (stored) {
@@ -43,6 +51,16 @@ if (stored) {
     }
 }
 
+navigator.serviceWorker?.addEventListener('message', event => {
+    if(event.data?.type === 'REQUEST_ENTRIES') {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'ENTRIES_DATA',
+            entries: localStorage.getItem("entries")
+        });
+    }
+});
+
+
 // --- Force update SW ---
 document.addEventListener("DOMContentLoaded", () => {
     const forceBtn = document.getElementById("forceUpdateBtn");
@@ -51,47 +69,33 @@ document.addEventListener("DOMContentLoaded", () => {
     forceBtn.addEventListener("click", async () => {
         console.log("DEBUG: Force update knapp trykket");
 
-        if (!('serviceWorker' in navigator)) {
-            console.warn("DEBUG: Service workers ikke støttet i denne nettleseren");
-            return;
-        }
+        if (!('serviceWorker' in navigator)) return;
 
         try {
+            // Lagre entries midlertidig
+            const entriesData = localStorage.getItem("entries");
+            if (!entriesData) console.warn("Ingen entries funnet til midlertidig lagring");
+
+            // Hent SW-registrering
             const registration = await navigator.serviceWorker.getRegistration();
-            console.log("DEBUG: Fikk service worker registration:", registration);
-
-            if (!registration) return;
-
-            // Hent sw.js med timestamp for å bypass cache
-            const swCheck = await fetch(`/sw.js?ts=${Date.now()}`, { cache: "no-store" });
-            console.log("DEBUG: sw.js fetch status:", swCheck.status);
-
-            if (!swCheck.ok) return;
-
-            // Oppdater SW
-            await registration.update();
-
-            // Hvis det er en ny SW som venter
-            if (registration.waiting) {
-                console.log("DEBUG: Ny SW venter, sender SKIP_WAITING");
-                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
+            if (!registration || !registration.active) {
+                console.warn("Ingen aktiv SW registrert");
                 return;
             }
 
-            // Hvis en ny SW blir funnet under oppdatering
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("DEBUG: Ny SW installert, sender SKIP_WAITING");
-                        newWorker.postMessage({ type: 'SKIP_WAITING' });
-                        window.location.reload();
-                    }
-                });
-            });
+            // Send FORCE_UPDATE melding til SW
+            registration.active.postMessage({ type: 'FORCE_UPDATE' });
+
+            // Oppdater SW (prøver å hente ny versjon)
+            await registration.update();
+
+            // Behold entries etter reload
+            localStorage.setItem("entries_temp", entriesData);
+
+            // Reload siden for å bruke ny SW
+            window.location.reload();
         } catch (err) {
-            console.error("DEBUG: Feil ved force update:", err);
+            console.error("Feil under force update:", err);
         }
     });
 });
@@ -129,17 +133,21 @@ function renderEntries() {
     entries.forEach((entry, index) => {
         const tr = document.createElement("tr");
         tr.classList.add("added");
+        tr.dataset.index = String(index); // <--- viktig!
 
         const tdDate = document.createElement("td");
         tdDate.textContent = formatDate(entry.date);
+        tdDate.classList.add("editable", "date-cell");
 
         const tdDesc = document.createElement("td");
         tdDesc.textContent = entry.desc || "";
+        tdDesc.classList.add("editable", "desc-cell");
 
         const tdAmount = document.createElement("td");
         const amountVal = Number(entry.amount || 0);
         tdAmount.style.color = amountVal > 0 ? "green" : amountVal < 0 ? "red" : "yellow";
         tdAmount.textContent = `${formatMoney(amountVal)} kr`;
+        tdAmount.classList.add("editable", "amount-cell");
 
         const tdActions = document.createElement("td");
 
@@ -177,80 +185,108 @@ function renderEntries() {
 
 // --- Inline editing ---
 function enableInlineEditing() {
-    entryTableBody.querySelectorAll("tr").forEach((tr,index)=>{
+    entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
         const tdDate = tr.children[0];
         const tdAmount = tr.children[2];
 
-        const createInput = (val,type="text")=>{
+        const createInput = (placeholder) => {
             const input = document.createElement("input");
-            input.type = type;
+            input.type = "text";  // plain text for Safari kompatibilitet
             input.value = "";
-            input.placeholder = val;
+            input.placeholder = placeholder;
             input.className = "inline-edit-input";
             return input;
         };
 
-        const finishDate = (input)=>{
+        const finishDate = (input) => {
             let val = input.value.trim();
-            let newDate = parseDate(val);
-            if(!newDate){
-                const today = new Date();
-                const day = parseInt(val,10);
-                if(!isNaN(day)) newDate = new Date(today.getFullYear(),today.getMonth(),day);
-                else newDate = entries[index].date;
+            let original = entries[index].date;
+            let newDate = parseDate(val); // utils-funksjon for parsing
+
+            if (!newDate || isNaN(newDate.getTime())) {
+                newDate = original instanceof Date ? new Date(original) : new Date();
             }
 
-            const oldMonth = entries[index].date.getMonth();
-            const newMonth = newDate.getMonth();
-            if(newMonth!==oldMonth){
-                for(let i=index+1;i<entries.length;i++){
-                    entries[i].date.setMonth(entries[i].date.getMonth()+(newMonth-oldMonth));
-                }
-            }
             entries[index].date = newDate;
-            saveStorage();
-            renderEntries();
         };
 
-        const finishAmount = (input)=>{
-            let val = input.value.replace(/[^\d.-]/g,"").trim();
-            let num = parseFloat(val);
-            if(isNaN(num)) num = entries[index].amount;
+        const finishAmount = (input) => {
+            let val = input.value.trim().replace(/—/g,'--');
+            let num;
+
+            if (val.startsWith('++')) {
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? entries[index].amount : entries[index].amount + delta;
+            } else if (val.startsWith('--')) {
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? entries[index].amount : entries[index].amount - delta;
+            } else if (val.startsWith('-')) {
+                num = parseFloat(val.replace(/[^0-9.-]/g,""));
+                if (isNaN(num)) num = entries[index].amount;
+            } else {
+                num = parseFloat(val.replace(/[^0-9.]/g,""));
+                if (isNaN(num)) num = entries[index].amount;
+            }
+
             entries[index].amount = num;
-            saveStorage();
-            renderEntries();
+
+            // Sett dagens dato når beløp endres
+            entries[index].date = new Date();
         };
 
-        const setupInline = (td,finishFn)=>{
-            td.addEventListener("click",()=>{
-                if(td.querySelector("input")) return;
-                const initialVal = td.textContent;
-                const input = createInput(initialVal);
-                td.textContent="";
-                td.appendChild(input);
-                input.focus();
+        const setupInline = (td, finishFn, isDate=false) => {
+            td.addEventListener("click", () => {
+                if (td.querySelector("input")) return;
 
-                const doFinish = ()=>{ finishFn(input); };
-                input.addEventListener("blur",doFinish);
-                input.addEventListener("keydown",(e)=>{
-                    if(e.key==="Enter"||e.keyCode===13){
-                        e.preventDefault();
-                        input.blur();
+                const placeholder = td.textContent;
+                const input = createInput(placeholder);
+
+                td.textContent = "";
+                td.appendChild(input);
+
+                // Autofokus
+                setTimeout(() => input.focus(), 10);
+
+                const finish = () => {
+                    if (input.value.trim() === "") {
+                        if (isDate) {
+                            const original = entries[index].date;
+                            entries[index].date = original instanceof Date ? new Date(original) : new Date();
+                        }
+                    } else {
+                        finishFn(input);
                     }
-                });
+                    saveStorage();
+                    renderEntries();
+                };
+
+                const keyListener = (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        finish();
+                    } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        renderEntries(); // fallback
+                    }
+                };
+
+                input.addEventListener("keydown", keyListener);
+                input.addEventListener("focusout", finish);
             });
         };
 
-        setupInline(tdDate,finishDate);
-        setupInline(tdAmount,finishAmount);
+        setupInline(tdDate, finishDate, true);
+        setupInline(tdAmount, finishAmount, false);
     });
 }
 
+// Patch render
 const originalRenderEntries = renderEntries;
-renderEntries = function(){
+renderEntries = function() {
     originalRenderEntries();
     enableInlineEditing();
 };
+
 
 // --- Add entry ---
 function addEntry(descVal, amountVal, dateVal) {
@@ -398,15 +434,24 @@ helpBtn?.addEventListener("click",()=>{
 function renderHelpText(){
     const helpContainer=document.getElementById("helpDisplay");
     if(!helpContainer) return;
-    helpContainer.innerHTML=`
-        <h2>hvordan bruke kalkulatoren?</h2>
-        <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
-        <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
-        <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu.</p>
-        <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
-        <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
-        <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
-    `;
+    helpContainer.innerHTML = `
+    <h2>hvordan bruke kalkulatoren?</h2>
+    <p><strong>legg til oppføring:</strong> skriv inn navn, beløp, dato og kategori, trykk legg til. Du trenger ikke skrive år; skriver du bare dag (f.eks. “1” eller “01”) brukes inneværende måned. Oppføringer kan være både utgifter og inntekter.</p>
+    <p><strong>+14d:</strong> dupliser oppføringer 14 dager frem ved å trykke +14d-knappen. Endrer du måneden på en dato, justeres resten av listen automatisk.</p>
+    <p><strong>(+):</strong> dupliser oppføringen én gang på samme dato eller like etter, uten å endre datoen med 14 dager. Praktisk for å lage flere like poster raskt.</p>
+    <p><strong>inline editing:</strong> trykk på dato eller beløp i tabellen for å endre direkte uten å åpne et eget vindu. Du kan nå også:</p>
+    <ul>
+        <li>Redigere beløp direkte.</li>
+        <li>Bruke <strong>++500</strong> for å legge til 500 på eksisterende verdi.</li>
+        <li>Bruke <strong>--500</strong> for å trekke fra 500 på eksisterende verdi.</li>
+        <li>Bruke <strong>-500</strong> for å sette verdien direkte til negativ.</li>
+        <li>Bruke <strong>500</strong> for å sette verdien direkte til positiv.</li>
+        <li>Fjerne eller legge til verdi inline uten å åpne nytt vindu.</li>
+    </ul>
+    <p><strong>detailed view:</strong> denne visningen viser saldoen din etter at utgifter og inntekter på valgt dato er trukket fra/lagt til. Den gir deg en detaljert oversikt over hvordan hver oppføring påvirker saldoen, slik at du kan planlegge økonomien bedre.</p>
+    <p><strong>filtrering og kategorier:</strong> du kan filtrere oppføringer etter kategori eller dato for å se spesifikke utgifter/inntekter.</p>
+    <p><strong>historikk:</strong> alle oppføringer lagres automatisk, slik at du kan gå tilbake og se tidligere saldo og transaksjoner.</p>
+`;
 }
 
 async function renderChangelog(changelogDisplay) {
@@ -459,9 +504,10 @@ async function renderChangelog(changelogDisplay) {
 }
 
 closePopupBtn?.addEventListener("click",()=>{popup.style.display="none";});
-clearCacheBtn?.addEventListener("click",()=>{
-    localStorage.clear();
-    window.location.reload();
+clearCacheBtn?.addEventListener("click", () => {
+    if(confirm("Er du sikker på at du vil slette ALL cache inkludert tabellen?")) {
+        navigator.serviceWorker.controller?.postMessage('CLEAR_CACHE');
+    }
 });
 
 function showUpdateBanner() {
