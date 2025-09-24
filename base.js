@@ -526,10 +526,22 @@ async function renderChangelog(changelogDisplay) {
 
 closePopupBtn?.addEventListener("click",()=>{popup.style.display="none";});
 clearCacheBtn?.addEventListener("click", () => {
-    if(confirm("Er du sikker på at du vil slette ALL cache inkludert tabellen?")) {
+    if (confirm("Er du sikker på at du vil slette ALL cache inkludert tabellen?")) {
+        // Slett entries i localStorage
+        localStorage.removeItem("entries");
+        localStorage.removeItem("entries_temp");
+
+        // Oppdater tabellen
+        entries = [];
+        renderEntries();
+        updateSluttsum();
+        updateDetailedView();
+
+        // Send CLEAR_CACHE til SW hvis den finnes
         navigator.serviceWorker.controller?.postMessage('CLEAR_CACHE');
     }
 });
+
 
 function showUpdateBanner() {
   if(document.getElementById('updateBanner')) return; // already showing
