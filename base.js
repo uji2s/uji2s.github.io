@@ -184,6 +184,7 @@ function renderEntries() {
 }
 
 // --- Inline editing ---
+// --- Inline editing ---
 function enableInlineEditing() {
     entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
         const tdDate = tr.children[0];
@@ -230,8 +231,10 @@ function enableInlineEditing() {
 
             entries[index].amount = num;
 
-            // Sett dagens dato når beløp endres
-            entries[index].date = new Date();
+            // Oppdater dato kun hvis entry er "dagens saldo"
+            if ((entries[index].desc || "").toLowerCase() === "dagens saldo") {
+                entries[index].date = new Date();
+            }
         };
 
         const setupInline = (td, finishFn, isDate=false) => {
@@ -244,8 +247,9 @@ function enableInlineEditing() {
                 td.textContent = "";
                 td.appendChild(input);
 
-                // Autofokus
-                setTimeout(() => input.focus(), 10);
+                // Robust autofocus og select
+                input.focus({ preventScroll: true });
+                input.select();
 
                 const finish = () => {
                     if (input.value.trim() === "") {
@@ -279,6 +283,7 @@ function enableInlineEditing() {
         setupInline(tdAmount, finishAmount, false);
     });
 }
+
 
 // Patch render
 const originalRenderEntries = renderEntries;
