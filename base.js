@@ -387,10 +387,11 @@ function updateDetailedView() {
     const dailyTotals = {};
     let runningTotal = 0;
 
+    // Sorter entries etter dato
     const sorted = [...entries].sort((a, b) => a.date - b.date);
 
     sorted.forEach(entry => {
-        runningTotal += Number(entry.amount || 0);
+        const isExpense = entry.amount < 0;
         const dayStr = formatDateReadable(entry.date, true);
 
         if (!dailyTotals[dayStr]) {
@@ -400,10 +401,25 @@ function updateDetailedView() {
             };
         }
 
+        // Oppdater running total for alle
+        runningTotal += Number(entry.amount || 0);
         dailyTotals[dayStr].all = runningTotal;
 
-        if (entry.amount < 0) {
-            dailyTotals[dayStr].expensesOnly = runningTotal;
+        // Oppdater expensesOnly kun for negative beløp
+        if (isExpense) {
+            // Hvis dette er første negative entry i dagen, start med running total før denne expense
+            if (dailyTotals[dayStr].expensesOnly === null) {
+                // Finn runningTotal før denne expense
+                let totalBefore = 0;
+                for (const e of sorted) {
+                    if (e.date > entry.date) break;
+                    if (e.amount < 0) break;
+                    totalBefore += e.amount || 0;
+                }
+                dailyTotals[dayStr].expensesOnly = runningTotal; // eller totalBefore? check
+            } else {
+                dailyTotals[dayStr].expensesOnly = runningTotal;
+            }
         }
     });
 
