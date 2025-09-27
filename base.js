@@ -648,7 +648,7 @@ function setupExportBtn() {
     if (window.innerWidth > 768) { // desktop
         const btn = document.createElement("button");
         btn.id = "exportBtn";
-        btn.textContent = "Eksporter til tekstfil";
+        btn.textContent = "eksporter til txt";
         btn.style.margin = "10px";
         btn.addEventListener("click", exportEntriesToTextFile);
 
@@ -660,6 +660,66 @@ function setupExportBtn() {
 // Kjør når siden lastes og når vinduet resize's
 setupExportBtn();
 window.addEventListener("resize", setupExportBtn);
+
+// --- Base64 eksport / import ---
+function exportEntriesToBase64() {
+    if(entries.length === 0){
+        alert("Ingen oppføringer å eksportere.");
+        return;
+    }
+    const dataStr = JSON.stringify(entries.map(e => ({...e, date: e.date instanceof Date ? e.date.toISOString() : e.date})));
+    const b64 = btoa(unescape(encodeURIComponent(dataStr)));
+
+    prompt("Kopier Base64-strengen under:", b64);
+}
+
+function importEntriesFromBase64() {
+    const input = prompt("Lim inn Base64-strengen her:");
+    if(!input) return;
+
+    try {
+        const jsonStr = decodeURIComponent(escape(atob(input)));
+        const parsed = JSON.parse(jsonStr);
+        if(!Array.isArray(parsed)) throw new Error("Ugyldig format");
+
+        entries = parsed.map(e => ({...e, date: e.date ? new Date(e.date) : new Date()}));
+        saveStorage();
+        renderEntries();
+        updateSluttsum();
+        updateDetailedView();
+    } catch(err) {
+        console.error(err);
+        alert("Kunne ikke importere, sjekk at Base64-strengen er korrekt.");
+    }
+}
+
+// --- Opprett Base64-knapper på alle enheter ---
+function setupBase64Buttons() {
+    const exportBtnEl = document.getElementById("exportBtn");
+    if(!exportBtnEl) return; // eksisterer kun på desktop
+
+    // sjekk om knappene allerede finnes
+    if(document.getElementById("exportBase64Btn")) return;
+
+    const btnExport = document.createElement("button");
+    btnExport.id = "exportBase64Btn";
+    btnExport.textContent = "eksporter liste";
+    btnExport.style.marginLeft = "10px"; // på linje med eksportknappen
+    btnExport.addEventListener("click", exportEntriesToBase64);
+
+    const btnImport = document.createElement("button");
+    btnImport.id = "importBase64Btn";
+    btnImport.textContent = "importer liste";
+    btnImport.style.marginLeft = "5px"; // liten avstand
+    btnImport.addEventListener("click", importEntriesFromBase64);
+
+    exportBtnEl.insertAdjacentElement('afterend', btnImport);
+    exportBtnEl.insertAdjacentElement('afterend', btnExport);
+}
+
+// --- Init Base64-knapper ---
+setupBase64Buttons();
+
 
 // --- Init ---
 renderEntries();
