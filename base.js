@@ -628,26 +628,58 @@ function exportEntriesToBase64() {
 }
 
 function importEntriesFromBase64() {
-    const input = prompt("Lim inn Base64-strengen her:");
-    if(!input) return;
+    let input;
+    if(window.innerWidth <= 768){ // mobil
+        const ta = document.createElement("textarea");
+        ta.placeholder = "Lim inn Base64-strengen her";
+        ta.style.width="90%";
+        ta.style.height="100px";
+        ta.style.display="block";
+        ta.style.margin="10px auto";
+        document.body.appendChild(ta);
+        ta.focus();
 
-    try {
-        const binaryStr = atob(input);
-        const uint8array = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
-        const jsonStr = new TextDecoder().decode(uint8array);
-        const parsed = JSON.parse(jsonStr);
-        if(!Array.isArray(parsed)) throw new Error("Ugyldig format");
+        const btn = document.createElement("button");
+        btn.textContent="Importer";
+        btn.style.display="block";
+        btn.style.margin="10px auto";
+        document.body.appendChild(btn);
 
-        entries = parsed.map(e => ({...e, date: e.date ? new Date(e.date) : new Date()}));
-        saveStorage();
-        renderEntries();
-        updateSluttsum();
-        updateDetailedView();
-    } catch(err) {
-        console.error(err);
-        alert("Kunne ikke importere, sjekk at Base64-strengen er korrekt.");
+        btn.addEventListener("click", ()=>{
+            input = ta.value.trim();
+            ta.remove();
+            btn.remove();
+            if(!input) return;
+            tryImport(input);
+        });
+
+    } else { // desktop
+        input = prompt("Lim inn Base64-strengen her:");
+        if(!input) return;
+        tryImport(input);
+    }
+
+    function tryImport(str){
+        try{
+            const binaryStr = atob(str);
+            const uint8 = Uint8Array.from(binaryStr, c=>c.charCodeAt(0));
+            const jsonStr = new TextDecoder().decode(uint8);
+            const parsed = JSON.parse(jsonStr);
+            if(!Array.isArray(parsed)) throw new Error("Ugyldig format");
+
+            entries = parsed.map(e=>({...e,date:e.date?new Date(e.date):new Date()}));
+            saveStorage();
+            renderEntries();
+            updateSluttsum();
+            updateDetailedView();
+            alert("Import fullført!");
+        } catch(err){
+            console.error(err);
+            alert("Kunne ikke importere, sjekk at Base64-strengen er korrekt og komplett.");
+        }
     }
 }
+
 
 // --- Opprett Base64-knapper på alle enheter ---
 function setupBase64Buttons() {
