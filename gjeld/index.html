@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>marius' epic gjeldkalkulator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Tilbake knapp -->
+<div class="gjeld-btn-container">
+    <a class="gjeld-btn" href="/">← tilbake til budsjettkalkulator</a>
+</div>
+
+<div class="container">
+    <h1>marius' epic gjeldkalkulator</h1>
+
+    <div class="inputs">
+        <input type="text" id="name" placeholder="navn" title="navn">
+        <input type="number" id="amount" placeholder="beløp" title="beløp i kr">
+        <input type="text" id="desc" placeholder="beskrivelse" title="beskrivelse">
+        <button id="addEntryBtn" title="legg til">legg til</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>navn</th>
+                <th>beskrivelse</th>
+                <th>beløp</th>
+                <th>handling</th>
+            </tr>
+        </thead>
+        <tbody id="entryTableBody"></tbody>
+    </table>
+
+    <div id="detailedContainer">
+        <details>
+            <summary>detailed view</summary>
+            <div id="detailedView"></div>
+        </details>
+    </div>
+
+    <div id="sluttsum">total gjeld: 0 kr</div>
+    <div id="footer">(c) uji 2025</div>
+</div>
+
+<script src="utils.js"></script>
+<script src="gjeld.js"></script>
+
+</body>
+</html>
