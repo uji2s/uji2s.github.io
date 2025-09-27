@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1.43'; // Øk dette tallet når du endrer noe
+const CACHE_VERSION = 'v1.44'; // Øk dette tallet når du endrer noe
 const CACHE_NAME = `budsjett-cache-${CACHE_VERSION}`;
 
 // Versjonsstyrte filer (cache-busting med query params for ikoner)
