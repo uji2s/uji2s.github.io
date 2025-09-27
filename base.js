@@ -183,7 +183,26 @@ function renderEntries() {
     updateDetailedView();
 }
 
-// --- Inline editing ---
+// --- LEGG DENNE RETT UNDER renderEntries() ---
+const sortSelect = document.getElementById('sortSelect');
+if (sortSelect) {
+  sortSelect.addEventListener('change', () => {
+    const sortBy = sortSelect.value;
+
+    // Sjekk at entries eksisterer
+    console.log('Sorter etter:', sortBy, entries);
+
+    if (sortBy === 'date') {
+      entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+    } else if (sortBy === 'amount') {
+      entries.sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+    }
+
+    renderEntries(); // Oppdater visningen
+    saveStorage && saveStorage(); // lagre om funksjon finnes
+  });
+}
+
 // --- Inline editing ---
 function enableInlineEditing() {
     entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
