@@ -555,8 +555,10 @@ async function renderChangelog(changelogDisplay) {
         console.error("Kunne ikke lese changelog:", err);
     }
 }
+closePopupBtn?.addEventListener("click", () => {
+    popup.style.display = "none";
+});
 
-closePopupBtn?.addEventListener("click",()=>{popup.style.display="none";});
 clearCacheBtn?.addEventListener("click", () => {
     if (confirm("Er du sikker på at du vil slette ALL cache inkludert tabellen?")) {
         // Slett entries i localStorage
@@ -573,6 +575,21 @@ clearCacheBtn?.addEventListener("click", () => {
         navigator.serviceWorker.controller?.postMessage('CLEAR_CACHE');
     }
 });
+
+// --- DEV: Force Refresh uten å slette tabeller ---
+forceRefreshBtn?.addEventListener("click", async () => {
+        // Avregistrer service workers
+        if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (let reg of regs) {
+                await reg.unregister();
+            }
+        }
+
+        // Refresh siden for å hente fersk kode
+        location.reload(true);
+});
+
 
 
 function showUpdateBanner() {

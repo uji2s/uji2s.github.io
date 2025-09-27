@@ -251,3 +251,25 @@ body {
 html, body {
     overflow-x: hidden; /* ingen horisontal scroll */
 }
+
+.gjeld-btn-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.gjeld-btn {
+    display: inline-block;
+    text-decoration: none;
+    border: none;
+    background: none;
+    color: gray;               /* default grå */
+    font-weight: bold;
+    text-transform: lowercase; /* tvinger lowercase */
+    cursor: pointer;
+    transition: color 0.2s ease; /* smooth hover */
+}
+
+.gjeld-btn:hover {
+    color: white; /* blir hvit ved hover */
+}
+

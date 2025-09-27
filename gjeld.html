@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>gjeldkalkulator</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#222222">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- knapp øverst -->
+<div class="gjeld-btn-container">
+    <a href="/" class="gjeld-btn">budsjettkalkulator</a>
+</div>
+
+</head>
+<body>
+
+<h1>gjeldkalkulator</h1>
+
+<!-- inputfelt for nye entries -->
+<div class="input-container">
+    <input type="text" id="navn" placeholder="navn">
+    <input type="number" id="belop" placeholder="beløp">
+    <button id="addEntryBtn">legg til</button>
+    <button id="clearEntriesBtn">rydde alle</button>
+    <button id="forceRefreshBtn">DEV: force refresh</button>
+</div>
+
+<!-- tabell for detaljer -->
+<table id="entriesTable">
+    <thead>
+        <tr>
+            <th>navn</th>
+            <th>beløp</th>
+            <th>handling</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- entries dukker opp her -->
+    </tbody>
+</table>
+
+<!-- totalsum nederst -->
+<div id="totalContainer">
+    Total: <span id="totalAmount">0 kr</span>
+</div>
+
+<script src="gjeld.js"></script>
+</body>
+</html>
