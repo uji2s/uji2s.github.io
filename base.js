@@ -615,58 +615,29 @@ function showUpdateBanner() {
   document.body.appendChild(banner);
 }
 
-// --- Opprett container for eksport-knapper over tabellen ---
-function setupExportContainer() {
-    let container = document.getElementById("exportButtonsContainer");
-    if (!container) {
-        container = document.createElement("div");
-        container.id = "exportButtonsContainer";
-        container.style.display = "flex";
-        container.style.flexWrap = "wrap";
-        container.style.margin = "10px 0";
-        container.style.gap = "10px"; // mellom knappene
-        tableEl?.parentElement?.insertBefore(container, tableEl);
-    }
-    container.innerHTML = ""; // fjern gamle knapper
-    return container;
-}
-
-// --- Eksporter til tekstfil ---
-function exportEntriesToTextFile() {
-    if (entries.length === 0) { alert("Ingen oppføringer å eksportere."); return; }
-
-    let text = "";
-    entries.forEach((entry, index) => {
-        const month = entry.date.toLocaleString("no-NO", { month: "short" });
-        const amount = Number(entry.amount || 0);
-        text += `${index + 1}. ${month} | ${entry.desc} | ${amount > 0 ? "" : "-"}${Math.abs(amount)}kr\n`;
-    });
-    const total = entries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
-    text += `\nTil overs: ${total}kr\n`;
-
-    const blob = new Blob([text], { type: "text/plain" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "budsjett.txt";
-    a.click();
-}
-
-// --- Eksporter Base64 ---
+// --- Base64 eksport / import (Unicode-sikker) ---
 function exportEntriesToBase64() {
-    if(entries.length === 0){ alert("Ingen oppføringer å eksportere."); return; }
+    if(entries.length === 0){
+        alert("Ingen oppføringer å eksportere.");
+        return;
+    }
     const dataStr = JSON.stringify(entries.map(e => ({...e, date: e.date instanceof Date ? e.date.toISOString() : e.date})));
-    const b64 = btoa(unescape(encodeURIComponent(dataStr)));
+    const uint8array = new TextEncoder().encode(dataStr);
+    const b64 = btoa(String.fromCharCode(...uint8array));
     prompt("Kopier Base64-strengen under:", b64);
 }
 
-// --- Importer Base64 ---
 function importEntriesFromBase64() {
     const input = prompt("Lim inn Base64-strengen her:");
     if(!input) return;
+
     try {
-        const jsonStr = decodeURIComponent(escape(atob(input)));
+        const binaryStr = atob(input);
+        const uint8array = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+        const jsonStr = new TextDecoder().decode(uint8array);
         const parsed = JSON.parse(jsonStr);
         if(!Array.isArray(parsed)) throw new Error("Ugyldig format");
+
         entries = parsed.map(e => ({...e, date: e.date ? new Date(e.date) : new Date()}));
         saveStorage();
         renderEntries();
@@ -678,36 +649,39 @@ function importEntriesFromBase64() {
     }
 }
 
-// --- Sett opp alle knapper ---
-function setupAllExportButtons() {
-    const container = setupExportContainer();
+// --- Opprett Base64-knapper på alle enheter ---
+function setupBase64Buttons() {
+    // sjekk om knappene allerede finnes
+    if(document.getElementById("exportBase64Btn")) return;
 
-    // Tekstfil eksport (kun desktop)
-    if (window.innerWidth > 768) {
-        const btnText = document.createElement("button");
-        btnText.id = "exportBtn";
-        btnText.textContent = "eksporter til txt";
-        btnText.addEventListener("click", exportEntriesToTextFile);
-        container.appendChild(btnText);
+    const btnExport = document.createElement("button");
+    btnExport.id = "exportBase64Btn";
+    btnExport.textContent = "eksporter liste";
+    btnExport.style.marginLeft = "10px"; 
+    btnExport.addEventListener("click", exportEntriesToBase64);
+
+    const btnImport = document.createElement("button");
+    btnImport.id = "importBase64Btn";
+    btnImport.textContent = "importer liste";
+    btnImport.style.marginLeft = "5px";
+    btnImport.addEventListener("click", importEntriesFromBase64);
+
+    // Sett knappene på linje med eksisterende eksportknapp hvis den finnes
+    const existingExportBtn = document.getElementById("exportBtn");
+    if(existingExportBtn){
+        existingExportBtn.insertAdjacentElement('afterend', btnImport);
+        existingExportBtn.insertAdjacentElement('afterend', btnExport);
+    } else {
+        // Hvis ikke desktop eksport finnes (mobil), legg knappene over tabellen
+        tableEl?.parentElement?.insertBefore(btnExport, tableEl);
+        tableEl?.parentElement?.insertBefore(btnImport, tableEl);
     }
-
-    // Base64 knapper (alltid)
-    const btnExport64 = document.createElement("button");
-    btnExport64.id = "exportBase64Btn";
-    btnExport64.textContent = "eksporter liste";
-    btnExport64.addEventListener("click", exportEntriesToBase64);
-    container.appendChild(btnExport64);
-
-    const btnImport64 = document.createElement("button");
-    btnImport64.id = "importBase64Btn";
-    btnImport64.textContent = "importer liste";
-    btnImport64.addEventListener("click", importEntriesFromBase64);
-    container.appendChild(btnImport64);
 }
 
-// --- Init og resize ---
-setupAllExportButtons();
-window.addEventListener("resize", setupAllExportButtons);
+// --- Init Base64-knapper ---
+setupBase64Buttons();
+window.addEventListener("resize", setupBase64Buttons);
+
 
 
 // --- Init ---
