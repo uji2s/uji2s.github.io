@@ -183,7 +183,7 @@ function renderEntries() {
     updateDetailedView();
 }
 
-// --- LEGG DENNE RETT UNDER renderEntries() ---
+// --- Sorteringsvalg for entries ---
 const sortSelect = document.getElementById('sortSelect');
 if (sortSelect) {
   sortSelect.addEventListener('change', () => {
@@ -196,12 +196,25 @@ if (sortSelect) {
       entries.sort((a, b) => new Date(a.date) - new Date(b.date));
     } else if (sortBy === 'amount') {
       entries.sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+    } else if (sortBy === 'best') {
+      // smart sortering: holder mest mulig penger på konto
+      const today = new Date();
+      entries.sort((a, b) => {
+        const daysA = (new Date(a.date) - today) / (1000 * 60 * 60 * 24);
+        const daysB = (new Date(b.date) - today) / (1000 * 60 * 60 * 24);
+
+        const scoreA = (daysA * 10) - parseFloat(a.amount);
+        const scoreB = (daysB * 10) - parseFloat(b.amount);
+
+        return scoreB - scoreA; // høyest score sist = mest “gunstig”
+      });
     }
 
     renderEntries(); // Oppdater visningen
     saveStorage && saveStorage(); // lagre om funksjon finnes
   });
 }
+
 
 // --- Inline editing ---
 function enableInlineEditing() {
