@@ -33,7 +33,6 @@
 - [24-09-2025] fix: prevent date change on non-dagens saldo entries and include starting balance in filtered detailed view
 - [17-09-2025] fixed inline editing to adjust to todays date
 - [17-09-2025] fix: safari inline editing click-out, and inputbox bugs.
-- [16-09-2025] fixed GÇö
 - [15-09-2025] fix: macos changelog gen
 - [08-09-2025] smooth scroll, fixed scroll on phone in changelog
 - [08-09-2025] fix for scrolling part 2
