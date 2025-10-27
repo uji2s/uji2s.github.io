@@ -8,7 +8,7 @@
         body {
             font-family: Arial, sans-serif;
             max-width: 780px;
-            margin: 20px auto;
+            margin: 10px auto;
             background: #fbfbfb;
             padding: 18px;
             border-radius: 12px;
@@ -18,6 +18,7 @@
         h1 {
             text-align: center;
             margin-bottom: 4px;
+            font-size: 22px;
         }
 
         p.lead {
@@ -48,15 +49,18 @@
         .row {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .col {
             flex: 1;
+            min-width: 140px;
         }
 
         .checkbox-inline {
             margin-top: 10px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
             gap: 8px;
         }
@@ -73,15 +77,7 @@
             cursor: pointer;
         }
 
-        #result {
-            margin-top: 18px;
-            padding: 12px;
-            border-radius: 8px;
-            background: #fff;
-            border: 1px solid #eee;
-        }
-
-        .warn {
+        #warn {
             background: #fff7e6;
             border: 1px solid #ffd08a;
             padding: 10px;
@@ -89,6 +85,14 @@
             margin-bottom: 10px;
             color: #7a4b00;
             display: none;
+        }
+
+        #result {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #eee;
         }
 
         .note {
@@ -103,216 +107,215 @@
             margin-top: 6px;
         }
 
-        .meta {
-            font-size: 13px;
-            color: #666;
-            margin-top: 8px;
+        @media screen and (max-width: 480px) {
+            .row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Skækkulator — THC-kakao</h1>
-    <p class="lead">Raskt estimat av THC per kopp med fett-justering, advarsel ved høy dose, og litt koselig tekst 🎶</p>
+    <p class="lead">THC per kopp med fett-justering, dose-varsel og koselige vibber 🌿☕</p>
 
     <label>Gram hasj:</label>
     <input id="grams" type="number" min="0" step="0.1" value="1">
 
     <label>Styrke på hasj:</label>
     <select id="strength">
-        <option value="0.10">Svak (~10% THC)</option>
-        <option value="0.15">Middels (~15% THC)</option>
-        <option value="0.20">Sterk (~20% THC)</option>
-        <option value="0.25">Ekstra sterk (~25% THC)</option>
-        <option value="0">Ukjent (bruk gjennomsnitt 15%)</option>
-    </select>
-
-    <label>Konsistens / farge (viser grov forventet potensiell relativ styrke):</label>
-    <select id="consistency">
-        <option value="0.92">Tørr / lys (litt lavere løselighet)</option>
-        <option value="1">Mellom</option>
-        <option value="1.08">Oljete / mørk (litt høyere løselighet)</option>
-        <option value="1">Ukjent</option>
+        <option value="0.10">Svak (~10 %)</option>
+        <option value="0.15">Middels (~15 %)</option>
+        <option value="0.20">Sterk (~20 %)</option>
+        <option value="0.25">Ekstra sterk (~25 %)</option>
+        <option value="0">Ukjent (bruk 15 %)</option>
     </select>
 
     <div class="row">
         <div class="col">
-            <label>Type melk (velg fett%-proxy):</label>
-            <select id="milk">
-                <option value="0.005">Ekstra lett (0.5% fett)</option>
-                <option value="0.01">Lett (1.0% fett)</option>
-                <option value="0.035">Helmelk (3.5% fett)</option>
+            <label>Konsistens:</label>
+            <select id="consistency">
+                <option value="0.9">Kief (svært fint, lav løselighet)</option>
+                <option value="0.95">Fast</option>
+                <option value="1.0">Hard</option>
+                <option value="1.05">Myk</option>
+                <option value="1.08">Seig</option>
+                <option value="1.1">Klumpete / smuldrete</option>
             </select>
-            <small>Velg den melketypen du bruker — fett øker hvor mye THC som løses i blandingen.</small>
         </div>
-
         <div class="col">
-            <label>Sjokopålegg fett-% (velg nærmeste):</label>
-            <select id="chocoFat">
-                <option value="0.2">Lav (20% fett)</option>
-                <option value="0.3">Middels (30% fett)</option>
-                <option value="0.4">Høy (40% fett)</option>
-                <option value="0.55">Ekstra (55%+ fett, f.eks. smørblandet)</option>
+            <label>Farge:</label>
+            <select id="color">
+                <option value="0.92">Veldig lys</option>
+                <option value="0.96">Lys</option>
+                <option value="1.04">Mørk</option>
+                <option value="1.08">Veldig mørk</option>
             </select>
-            <small>Dette representerer fettandelen i sjokopålegget — høyere fett betyr mer effektiv løsing av THC i fettfase.</small>
         </div>
     </div>
 
     <div class="checkbox-inline">
-        <input id="useChocoButter" type="checkbox" checked>
-        <label style="font-weight:600; margin:0;">Jeg blander smør og hasj og rører i sjokopålegget (bruker sjokosmør)</label>
+        <label for="oily" style="margin:0;">Oljete?</label>
+        <input id="oily" type="checkbox">
     </div>
 
-    <label>Antall kopper (fordeling):</label>
+    <div class="row">
+        <div class="col">
+            <label>Melketype (fett %):</label>
+            <select id="milk">
+                <option value="0.005">Ekstra lett (0.5 %)</option>
+                <option value="0.01">Lett (1 %)</option>
+                <option value="0.035">Helmelk (3.5 %)</option>
+            </select>
+            <small>Mer fett gir bedre oppløsning av THC i fettfasen.</small>
+        </div>
+        <div class="col">
+            <label>Sjokopålegg fett %:</label>
+            <select id="chocoFat">
+                <option value="0.309">Nutella (30.9 %)</option>
+                <option value="0.365">First Price (36.5 %)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="checkbox-inline">
+        <label style="margin:0;">Sjokosmør?</label>
+        <input id="useChocoButter" type="checkbox" checked>
+    </div>
+
+    <label>Antall kopper:</label>
     <input id="cups" type="number" min="1" step="1" value="1">
 
     <button onclick="calculateTHC()">Regn THC per kopp</button>
 
     <div id="result">
-        <div id="warn" class="warn">⚠️ Advarsel: Høy dose — vær forsiktig. Ta det rolig, start med liten mengde og kos deg.</div>
+        <div id="warn"></div>
         <div id="out"></div>
-        <div class="meta" id="metaSources"></div>
     </div>
 
     <script>
-        /* Kilder og sikkerhetsmerknad:
-           - THC er fettløselig; fett i mat øker oral biotilgjengelighet. (kilder vises i UI etter utregning)
-           - Jeg kan ikke gi eksplisitte, trinnvise varme-/decarboxylasjonstemp/-metoder. Under gir jeg kun generell, ikke-handlingsbar anbefaling om tid/varighet (se kilder).
-        */
-
         function chooseQuote(effect) {
-            // quote pools
             const normal = [
-                "Bare koselig og chill ☕😌",
-                "Du vil føle det, men alt er smooth 😎",
-                "Woah, hold fast! Dette blir en reise 🌌",
-                "HAHAHA du kommer til å kose deg ikveld 🤯🔥",
-                "Perfekt balanse mellom chill og flyt 🌿",
-                "Sett på litt musikk, kos deg 🎶",
-                "En kopp med ren ro 🧘‍♂️"
-            ];
-
+                "Bare koselig og chill ☕😌", "Du vil føle det, men alt er smooth 😎",
+                "Perfekt balanse mellom chill og flyt 🌿", "Sett på litt musikk, kos deg 🎶",
+                "En kopp med ren ro 🧘‍♂️"];
             const serdarsk = [
-                "Jeg koser chill ass, alt soft nå 🤙",
-                "Hold fast ass — dette blir en skikkelig tur, bro!",
-                "Skogtun Tangen vibes, bror — du svever snart 🌲✨", // referanse innfelt
-                "RAAAR hahah du kose deg ikveld ass 🔥",
-                "Bror, jeg tror jeg ser lyden nå, for real 💀"
-            ];
-
+                "Jeg koser chill ass, alt soft nå 🤙", "Skogtun Tangen vibes, bror 🌲✨",
+                "Hold fast ass – dette blir tur!", "Bror, jeg tror jeg ser lyden nå 💀"];
             const adriansk = [
-                "🌿 Me molto relaxino <small>(Jeg er veldig avslappet)</small>",
-                "😌 Me senti soft vibra <small>(Jeg føler myke vibber)</small>",
-                "🌌 Woah me trippi stilo <small>(Woah, jeg på trip-stemning)</small>",
-                "🍫 Me gusta kakaolino <small>(Jeg liker kakaoen)</small>",
-                "😂 Me faccia sorriso <small>(Ansiktet mitt smiler)</small>"
+                "🌿 Me molto relaxino", "😌 Me senti soft vibra",
+                "🌌 Woah me trippi stilo", "🍫 Me gusta kakaolino"];
+
+            const weedJokes = [
+                "Why did the stoner plant a light bulb? He wanted to grow a power plant.",
+                "Why was the stoner staring at the orange juice?<br>Because it said concentrate.",
+                "How do stoners clean their teeth?<br>With a joint brush.",
+                "Why did the pothead cross the road?<br>To get to the other high.",
+                "What do you call a stoner with two spliffs?<br>A high achiever.",
+                "Why don't stoners play hide and seek?<br>Because good luck hiding when you're giggling.",
+                "How does a stoner fix a broken bong?<br>With a joint effort.",
+                "Why did the stoner sit on the clock?<br>He wanted to be on time.",
+                "What’s a stoner’s favorite type of music?<br>High-hop.",
+                "Why did the stoner bring a ladder to the party?<br>Because he heard the drinks were on the house.",
+                "How do you know a stoner’s at your door?<br>They forget why they came.",
+                "Why did the stoner go to the doctor?<br>He was feeling a little baked.",
+                "What do you call a stoner’s dog?<br>A baked beagle.",
+                "Why did the stoner go to space?<br>To find higher ground.",
+                "What’s a stoner’s favorite website?<br>Reddit.",
+                "How do stoners throw a party?<br>They roll with it.",
+                "Why did the stoner fail his math test?<br>He was too high to count.",
+                "What do stoners call a slow computer?<br>High-lag.",
+                "Why did the stoner stare at the frozen juice?<br>Because it was concentrate.",
+                "Why did the stoner eat the clock?<br>He wanted to get high on time.",
+                "How do you know a stoner is knocking at your door?<br>He forgot why he was there.",
+                "Why did the stoner bring a pillow to the party?<br>Because he wanted to get couch-locked.",
+                "What’s a stoner’s favorite salad?<br>Ca-nabis.",
+                "Why do stoners make terrible secret agents?<br>They keep getting caught in a puff.",
+                "How does a stoner stay cool in the summer?<br>He takes a chill pill.",
+                "What do you call a stoner with a map?<br>Lost.",
+                "Why was the stoner happy in math class?<br>He was on a higher plane.",
+                "What do stoners put on their toast?<br>High-jam.",
+                "Why did the stoner buy a boat?<br>He wanted to go high seas.",
+                "Why did the stoner fail art class?<br>He was too spaced out.",
+                "How do stoners pay for things?<br>They blaze a trail.",
+                "Why did the stoner go to the bakery?<br>He wanted some baked goods.",
+                "What did the stoner say at the beach?<br>Sea, sea, seaweed.",
+                "Why did the stoner go to the bank?<br>To check his high-interest account.",
+                "How do stoners communicate?<br>By joint messaging.",
+                "Why did the stoner stare at the fridge?<br>He was looking for some chill.",
+                "Why don’t stoners make good chefs?<br>They get baked instead of baking.",
+                "What did the stoner say to the tree?<br>Leaf me alone, I'm high.",
+                "Why did the stoner take a nap in the garden?<br>He wanted to get some fresh high air.",
+                "What’s a stoner’s favorite candy?<br>High-chews.",
+                "Why was the stoner so calm?<br>Because he was in his high mind.",
+                "How do stoners navigate?<br>They follow the high road.",
+                "Why did the stoner break up with his lighter?<br>He felt burnt out.",
+                "What did the stoner say about the chair?<br>It’s so chair-mazing, I’m sitting on it forever.",
+                "Why did the stoner bring string to the party?<br>To tie one on.",
+                "What’s a stoner’s favorite exercise?<br>Joint stretches.",
+                "Why did the stoner go to school?<br>To get a higher education.",
+                "Why did the stoner sit in the sun?<br>He wanted to get a little baked.",
+                "What do you call a stoner in a movie theater?<br>High definition."
             ];
 
-            // 1/3 sjanse for serdarsk eller adriansk; resten normal
             const r = Math.random();
             let pool = normal;
-            if (r < 0.33) {
-                pool = Math.random() < 0.5 ? serdarsk : adriansk;
-            }
-            // prefer quotes aligned with effect intensity: pick by index roughly
-            return pool[Math.floor(Math.random() * pool.length)];
+            if (r < 0.33) { pool = Math.random() < 0.5 ? serdarsk : adriansk; }
+            const quoteText = pool[Math.floor(Math.random() * pool.length)];
+            const jokeText = weedJokes[Math.floor(Math.random() * weedJokes.length)];
+
+            return `${quoteText}<br>💡 ${jokeText}`;
         }
 
         function calculateTHC() {
-            // read inputs
             const grams = parseFloat(document.getElementById('grams').value) || 0;
-            let strength = parseFloat(document.getElementById('strength').value);
+            let strength = parseFloat(document.getElementById('strength').value) || 0.15;
             const consistency = parseFloat(document.getElementById('consistency').value) || 1;
-            const milkFat = parseFloat(document.getElementById('milk').value) || 0.01; // e.g. 0.035
-            const chocoFat = parseFloat(document.getElementById('chocoFat').value) || 0.3;
+            const color = parseFloat(document.getElementById('color').value) || 1;
+            const oily = document.getElementById('oily').checked;
+            const milkFat = parseFloat(document.getElementById('milk').value) || 0.01;
+            let chocoFat = parseFloat(document.getElementById('chocoFat').value) || 0.3;
             const useChocoButter = document.getElementById('useChocoButter').checked;
             const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
 
-            if (strength === 0) strength = 0.15; // default gjennomsnitt
-
-            // baseline total THC (mg) i rå materiale (teoretisk)
-            const totalTHC_raw = grams * strength * 1000; // gram -> mg
-
-            // konsistens justering (liten relativ faktor)
-            const adjByConsistency = consistency;
-
-            // Fett-komponent: vi kombinerer melkefett and sjoko-fat til en 'tilgjengelig fettandel'
-            // Vi bruker melkFat som prosent per kopp (fett i melk volume), og chocoFat som fett i sjokopålegg.
-            // Merk: disse er relative faktorer for estimat — ikke temperaturinstruksjoner.
-            // create a combined fat score between ~0.5–1.0+ depending on choices and if chocoButter used.
-            // (Dette er en kalkulasjonsmodell for UI, ikke en eksakt vitenskapelig konvertering)
-            let fatScore = milkFat * 100; // milkFat like 0.035 -> 3.5 baseline
-            // scale milk contribution modestly
-            fatScore = fatScore * 0.6; // just scaling to keep numbers in reasonable range
-
-            // If using chocoButter (smør + sjoko) we add contribution from chocoFat, scaled
-            if (useChocoButter) {
-                fatScore += (chocoFat * 100) * 0.9; // chocoFat 0.3 -> +27
-            } else {
-                // if only adding choco spread but not chocoButter, still some contribution
-                fatScore += (chocoFat * 100) * 0.45;
-            }
-
-            // convert fatScore back to a multiplier roughly between ~0.6 and ~1.6
-            const fatMultiplier = 0.55 + (fatScore / 100); // conservative mapping
-
-            // total available THC (just a modeled estimate)
-            const totalTHC_available = totalTHC_raw * adjByConsistency * fatMultiplier;
-
-            // per cup
+            const totalTHC_raw = grams * strength * 1000;
+            let solubility = consistency * color * (oily ? 1.1 : 1); // oljete gir +10 %
+            let fatScore = milkFat * 100 * 0.6;
+            fatScore += (chocoFat * 100) * (useChocoButter ? 0.9 : 0.45);
+            const fatMultiplier = 0.55 + (fatScore / 100);
+            const totalTHC_available = totalTHC_raw * solubility * fatMultiplier;
             const thcPerCup = totalTHC_available / cups;
+            const percentOfRaw = (thcPerCup / totalTHC_raw) * 100;
 
-            // prosentandel av det teoretiske rå-THC som ender opp per kopp (av totalTHC_raw)
-            const percentOfRawPerCup = (thcPerCup / totalTHC_raw) * 100;
-
-            // effektkategorier
             let effect = '';
             if (thcPerCup < 10) effect = 'Mild';
             else if (thcPerCup < 30) effect = 'Middels';
             else if (thcPerCup < 60) effect = 'Sterk';
             else effect = 'Ekstrem';
 
-            // WARNING display if >50 mg per cup (user wanted ikke-skummel advarsel)
             const warnEl = document.getElementById('warn');
             if (thcPerCup > 50) {
                 warnEl.style.display = 'block';
-                warnEl.innerHTML = '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp). Ta det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
-            } else {
-                warnEl.style.display = 'none';
-            }
+                warnEl.innerHTML = '⚠️ Høy dose – ta det rolig og kos deg. Ha snacks klare 🍫🍿.';
+            } else warnEl.style.display = 'none';
 
-            // Anbefalt ekstra tid/varighet (ikke temperatur) — relativ, basert på fatMultiplier og melkefett.
-            // Vi gir et estimat i "minutter ekstra" for å la fettet trekke og THC løse seg i fettfase.
-            // Viktig: dette er en konservativ, ikke-handlingsbar rådgivning (ingen presise varmeinstruksjoner).
-            // Logikk: mer fett -> litt kortere relativt sett for å oppnå god oppløsning; mindre fett -> litt mer tid.
-            // Vi modellerer slik at baseline ekstra tid = 3 min (for 1 kopp), og justerer ± etter fatMultiplier & cups.
-            let baselineExtra = 3; // minutter baseline
-            // if milk is very low fat and no chocoButter, suggest slightly longer time
-            let extraTime = baselineExtra;
-            if (fatMultiplier < 0.9) extraTime += 3;      // lavt fett -> +3 min
-            else if (fatMultiplier < 1.1) extraTime += 1; // moderat fett -> +1 min
-            else extraTime -= 0.5;                       // høyt fett -> litt mindre ekstra
-            // scale with number of cups modestly
-            extraTime += Math.max(0, (cups - 1) * 0.6);
+            let extra = 3;
+            if (fatMultiplier < 0.9) extra += 3;
+            else if (fatMultiplier < 1.1) extra += 1;
+            else extra -= 0.5;
+            extra += Math.max(0, (cups - 1) * 0.6);
+            if (extra < 0.5) extra = 0.5;
 
-            // ensure not negative
-            if (extraTime < 0.5) extraTime = 0.5;
-
-            // prepare quote
             const quote = chooseQuote(effect);
-
-            // Output
-            const out = document.getElementById('out');
-            out.innerHTML =
-                `<strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg` +
-                ` <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>` +
-                `<strong>Estimert effekt:</strong> ${effect}<br>` +
-                `<strong>Anbefalt ekstra varighet (konservativ, ikke-temperatur):</strong> ca ${extraTime.toFixed(1)} minutter ekstra for god fett-infusjon / oppløsning (justert etter melk & sjokofett).<br>` +
+            document.getElementById('out').innerHTML =
+                `<strong>THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg ` +
+                `<small>(${percentOfRaw.toFixed(1)} % av rå-THC)</small><br>` +
+                `<strong>Effekt:</strong> ${effect}<br>` +
+                `<strong>Anbefalt ekstra varighet:</strong> ca ${extra.toFixed(1)} min for fett-infusjon.<br>` +
                 `<div style="margin-top:8px;"><em>${quote}</em></div>`;
 
-            // show short sources + link hints (no raw URLs in plain text, but reference labels)
-            const meta = document.getElementById('metaSources');
-            meta.innerHTML = 'Kilder: forskning som beskriver at THC er fettløselig og at varme aktiverer THCA → THC (se publikasjoner fra NCBI/PMC, CDC, og gjennomgangsartikler).';
+            document.getElementById('metaSources').innerText = ''; // fjernet kilder
         }
     </script>
+
 </body>
 </html>
