@@ -1,321 +1,224 @@
 ﻿<!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="utf-8">
-    <title>Skækkulator — THC-kakao</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 780px;
-            margin: 10px auto;
-            background: #fbfbfb;
-            padding: 18px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 4px;
-            font-size: 22px;
-        }
-
-        p.lead {
-            text-align: center;
-            color: #444;
-            margin-top: 0;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        label {
-            display: block;
-            margin-top: 12px;
-            font-weight: 600;
-            color: #222;
-        }
-
-        input, select {
-            margin-top: 6px;
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .col {
-            flex: 1;
-            min-width: 140px;
-        }
-
-        .checkbox-inline {
-            margin-top: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
-
-        button {
-            margin-top: 16px;
-            padding: 12px;
-            width: 100%;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 0;
-            background: #2b9aef;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        #warn {
-            background: #fff7e6;
-            border: 1px solid #ffd08a;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            color: #7a4b00;
-            display: none;
-        }
-
-        #result {
-            margin-top: 18px;
-            padding: 12px;
-            border-radius: 8px;
-            background: #fff;
-            border: 1px solid #eee;
-        }
-
-        .note {
-            font-size: 13px;
-            color: #555;
-            margin-top: 8px;
-        }
-
-        small {
-            color: #666;
-            display: block;
-            margin-top: 6px;
-        }
-
-        @media screen and (max-width: 480px) {
-            .row {
-                flex-direction: column;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kakao & THC Kalkulator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f0e8;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 {
+        text-align: center;
+        color: #6b3e26;
+    }
+    .container {
+        max-width: 700px;
+        margin: auto;
+        background-color: #fff3e6;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    label {
+        display: block;
+        margin: 10px 0 5px;
+    }
+    input, select {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 15px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .checkbox-container label {
+        margin: 0 10px 0 0; /* Plassering av tekst til venstre */
+    }
+    button {
+        background-color: #6b3e26;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #59301e;
+    }
+    .result {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fff8f0;
+        border-radius: 8px;
+        border: 1px solid #ffd7b3;
+    }
+</style>
 </head>
 <body>
-    <h1>Skækkulator — THC-kakao</h1>
-    <p class="lead">THC per kopp med fett-justering, dose-varsel og koselige vibber 🌿☕</p>
+<div class="container">
+    <h1>Kakao & THC Kalkulator</h1>
 
-    <label>Gram hasj:</label>
-    <input id="grams" type="number" min="0" step="0.1" value="1">
+    <label for="milkFat">Fettprosent melk (%)</label>
+    <input type="number" id="milkFat" min="0" max="10" step="0.1" value="3.5">
 
-    <label>Styrke på hasj:</label>
-    <select id="strength">
-        <option value="0.10">Svak (~10 %)</option>
-        <option value="0.15">Middels (~15 %)</option>
-        <option value="0.20">Sterk (~20 %)</option>
-        <option value="0.25">Ekstra sterk (~25 %)</option>
-        <option value="0">Ukjent (bruk 15 %)</option>
+    <label for="spreadFat">Fettprosent pålegg (%)</label>
+    <input type="number" id="spreadFat" min="0" max="100" step="1" value="50">
+
+    <label for="thcType">Type THC-produkt</label>
+    <select id="thcType">
+        <option value="olje">Oljete</option>
+        <option value="mørk">Veldig mørk</option>
+        <option value="blomst">Blomst</option>
     </select>
 
-    <div class="row">
-        <div class="col">
-            <label>Konsistens:</label>
-            <select id="consistency">
-                <option value="0.9">Kief (svært fint, lav løselighet)</option>
-                <option value="0.95">Fast</option>
-                <option value="1.0">Hard</option>
-                <option value="1.05">Myk</option>
-                <option value="1.08">Seig</option>
-                <option value="1.1">Klumpete / smuldrete</option>
-            </select>
-        </div>
-        <div class="col">
-            <label>Farge:</label>
-            <select id="color">
-                <option value="0.92">Veldig lys</option>
-                <option value="0.96">Lys</option>
-                <option value="1.04">Mørk</option>
-                <option value="1.08">Veldig mørk</option>
-            </select>
-        </div>
+    <label for="thcPercent">THC-prosent (%)</label>
+    <input type="number" id="thcPercent" min="0" max="100" step="0.1" value="25">
+
+    <div class="checkbox-container">
+        <label for="sjokosmor">Sjokosmør</label>
+        <input type="checkbox" id="sjokosmor">
     </div>
 
-    <div class="checkbox-inline">
-        <label for="oily" style="margin:0;">Oljete?</label>
-        <input id="oily" type="checkbox">
-    </div>
+    <button onclick="calculateTHC()">Beregn kos</button>
 
-    <div class="row">
-        <div class="col">
-            <label>Melketype (fett %):</label>
-            <select id="milk">
-                <option value="0.005">Ekstra lett (0.5 %)</option>
-                <option value="0.01">Lett (1 %)</option>
-                <option value="0.035">Helmelk (3.5 %)</option>
-            </select>
-            <small>Mer fett gir bedre oppløsning av THC i fettfasen.</small>
-        </div>
-        <div class="col">
-            <label>Sjokopålegg fett %:</label>
-            <select id="chocoFat">
-                <option value="0.309">Nutella (30.9 %)</option>
-                <option value="0.365">First Price (36.5 %)</option>
-            </select>
-        </div>
-    </div>
+    <div class="result" id="result"></div>
+</div>
 
-    <div class="checkbox-inline">
-        <label style="margin:0;">Sjokosmør?</label>
-        <input id="useChocoButter" type="checkbox" checked>
-    </div>
+<script>
+function chooseQuote() {
+    const normal = [
+        "Bare kos deg, ikke stress – livet er kakao og fred ☕🌿",
+        "Chill, sett deg i sofaen, slå på litt musikk og smelt inn i universet 🎶",
+        "En kopp med ro, bror. Ikke mer, ikke mindre 😌",
+        "THC + kakao = kjærlighet med fett 🌈",
+        "Du er trygg, du er myk, du er varm – som sjokolade i panna 😴",
+        "Alt går sakte, men riktig. Akkurat som å røre i en gryte med kos 🍫",
+        "Livet er fett, literally, når du har helmelk i miksen 💪",
+        "Du blir ikke høy, du blir opplyst 🔥",
+        "Om du hører lyder i veggen – det er bare deg selv, bror 😳",
+        "Kakaoen smiler til deg nå. Smil tilbake 😌",
+        "Legg deg ned, bli en teppeburrito og bare lev 🥰",
+        "Ikke tenk for mye – bare flyt, du eier lufta nå 💨",
+        "Du er i slow motion nå, men verden følger ikke med 😂",
+        "Hvis du mister koppen, så var det skjebnen ☕💀",
+        "Alt er chill til du ser lyset danse på taket, da er du midt i sonen 🌌",
+        "Dette er ikke bare kakao, det er livsfilosofi i koppform 🤯",
+        "Du kjenner det ikke først, men plutselig – pang, kos 💚",
+        "Du smelter som smør i varm melk nå 😵",
+        "Ikke prøv å stå, bror. Sofaen vant kampen 🛋️",
+        "Kos, ro, varme, fred. THC sitt evangelium 😇"
+    ];
 
-    <label>Antall kopper:</label>
-    <input id="cups" type="number" min="1" step="1" value="1">
+    const serdarsk = [
+        "Bror jeg drikker skækkakao nå jeg flyr inni kjøkken skap ass 💀",
+        "Jeg er snill gutt idag prestegården fra serdar evensen ☕",
+        "Kan jeg komme på besøk serdar morra kveld klokken frem ettermaten klokken seks kveld serdar er hjemme idag 😂",
+        "Jeg er snill gutt idag storbråten fra serdar evensen fra serdar evensen 😭",
+        "God pinsehelg marius rabe Nordberg hagen fra serdar evensen 🌿",
+        "Jeg har spist dessvar idag og kakaon gjør meg varm i sjel 😌",
+        "Bror jeg tror taklampa sa navnet mitt akkurat 💡",
+        "Kakao e som kos fra Gud men med litt hasj i 🍫🙏",
+        "Alt snurrer ass men jeg smiler så det går bra hahaha 😭",
+        "Jeg føler meg som smør på pizza bror helt smelta 😩",
+        "Kakao traff meg i hjernen bror jeg snakker med stol nå 🪑",
+        "Jeg tok en slurk og fikk wifi i hjernen 📶",
+        "Serdar fra serdar evensen drikker kakao nå med fett melk og ro i sjel 🙏",
+        "Jeg ble rolig, så rolig at gulvet sa 'shh' 🧘‍♂️",
+        "Kakao snakker arabisk til meg nå bror wallah 😭",
+        "Bror jeg ser lyd nå, hør den lyden det er grønn 💚",
+        "Jeg føler jeg sitter opp ned men alt er riktig 😵",
+        "Jeg er i rommet men rommet er også i meg ass 😭",
+        "Koppen ser på meg og jeg ser tilbake, vennskap etablert ☕👁️",
+        "Jeg tror jeg ble en muffins i sjelen min nå 😂"
+    ];
 
-    <button onclick="calculateTHC()">Regn THC per kopp</button>
+    const adriansk = [
+        "HOla seniorita, el yo beverar kakaolino grande relaxino 🌿",
+        "El yo trippi stilo dentro la koppo de skækkakao 💫",
+        "Me mucho amorar el choco fatto vibra gangsta monke mode 🍫🙈",
+        "Flaminginio mayoneso de THC kakaolino por favour 😎",
+        "Yo senti la braino smelta in la cupito 🤯",
+        "Me vibra softissimo como marsipano horoso 💋",
+        "Olololooo me no firstein espanol pero me smila bigimoto royale 💀",
+        "Me gusto tu kakaolino, seniorita, muy pulero 💞",
+        "Caprisono pomodoro THC latte mix grandioso bm 🍶",
+        "Ima turkey bambino men me beverar koko loco 😭",
+        "Yo me amore siempre con tu choco butter vibra 💕",
+        "Fenanilo makiata por favour mamao 😭",
+        "No comprendo el gravity, el kakaolino take me up 😵",
+        "Pomodoro brain explosion el yo sentado in sofa royale 😭",
+        "Bigimoto furunkulo inni minni hazan vibrationo 🌀",
+        "La kakao me smotrit film inside la head 😌",
+        "Me senk in stol como marshmello meltingo 😭",
+        "Yo vibra dentro el koppo como santo moloko ✨",
+        "No onion, no fear, solo high grande feliz 🎉",
+        "Ola lo, el yo in monke mode de chocolate ☕🙈"
+    ];
 
-    <div id="result">
-        <div id="warn"></div>
-        <div id="out"></div>
-    </div>
+    const weedJokes = [
+        "Hvorfor tok stoneren buss til kjøkkenet? Fordi gulvet bevega seg for fort 🚍",
+        "Hva sier en norsk stoner når han mister koppen? 'Jaja, grav det ned bror' ☕😂",
+        "Hvorfor brukte stoneren melk med 0.5% fett? Han ville være lett baked 🥴",
+        "Hva sier stoneren til mikrobølgeovnen? 'Vi er i samme varme nå bror' 🔥",
+        "Hvordan vet du at en nordmann er høy? Han begynner å forklare ost 🌿🧀",
+        "Hvorfor ble ikke stoneren lege? For mye praksis i sofa 🛋️",
+        "Hvorfor ble stoneren sint på Nutellaen? Den var for klebrig i diskusjon 🍫",
+        "Hva kaller man en stoner som vasker huset? En bønnevasker 😂",
+        "Hvorfor gikk stoneren på fjelltur? Han hørte det var høyt der ⛰️",
+        "Hva gjør stoneren når han mister lighteren? Skylder på katten 🔥🐈",
+        "Hva sier stoneren når han åpner kjøleskapet? 'Bror, du bor her nå?' 😭",
+        "Hvorfor spiser stoneren taco uten fyll? Han glemte resten 🌮",
+        "Hva kaller man en stoner som leser bok? En høylytt elev 📚",
+        "Hvorfor ble stoneren døpt? Han ville ha mer vann i systemet 💧",
+        "Hva sier stoneren på 17. mai? 'Hvorfor ruller ikke toget?' 🇳🇴",
+        "Hvorfor elsker stoneren vinter? Fordi han allerede fryser innenfra ❄️",
+        "Hva skjer når stoneren lager vafler? THC i mønster bror 🧇",
+        "Hvorfor ser stoneren i speilet så lenge? Han prøver å buffe blikket 👀",
+        "Hva sier stoneren når han blir spurt om klokka? 'Tid eksisterer ikke, bare kakao' ⏰",
+        "Hvorfor spiser stoneren ikke frokost? Han sover fortsatt i lunsjen 😂"
+    ];
 
-    <script>
-        function chooseQuote(effect) {
-            const normal = [
-                "Bare koselig og chill ☕😌", "Du vil føle det, men alt er smooth 😎",
-                "Perfekt balanse mellom chill og flyt 🌿", "Sett på litt musikk, kos deg 🎶",
-                "En kopp med ren ro 🧘‍♂️"];
-            const serdarsk = [
-                "Jeg koser chill ass, alt soft nå 🤙", "Skogtun Tangen vibes, bror 🌲✨",
-                "Hold fast ass – dette blir tur!", "Bror, jeg tror jeg ser lyden nå 💀"];
-            const adriansk = [
-                "🌿 Me molto relaxino", "😌 Me senti soft vibra",
-                "🌌 Woah me trippi stilo", "🍫 Me gusta kakaolino"];
+    const r = Math.random();
+    let pool = normal;
+    if (r < 0.33) pool = serdarsk;
+    else if (r < 0.66) pool = adriansk;
 
-            const weedJokes = [
-                "Why did the stoner plant a light bulb? He wanted to grow a power plant.",
-                "Why was the stoner staring at the orange juice?<br>Because it said concentrate.",
-                "How do stoners clean their teeth?<br>With a joint brush.",
-                "Why did the pothead cross the road?<br>To get to the other high.",
-                "What do you call a stoner with two spliffs?<br>A high achiever.",
-                "Why don't stoners play hide and seek?<br>Because good luck hiding when you're giggling.",
-                "How does a stoner fix a broken bong?<br>With a joint effort.",
-                "Why did the stoner sit on the clock?<br>He wanted to be on time.",
-                "What’s a stoner’s favorite type of music?<br>High-hop.",
-                "Why did the stoner bring a ladder to the party?<br>Because he heard the drinks were on the house.",
-                "How do you know a stoner’s at your door?<br>They forget why they came.",
-                "Why did the stoner go to the doctor?<br>He was feeling a little baked.",
-                "What do you call a stoner’s dog?<br>A baked beagle.",
-                "Why did the stoner go to space?<br>To find higher ground.",
-                "What’s a stoner’s favorite website?<br>Reddit.",
-                "How do stoners throw a party?<br>They roll with it.",
-                "Why did the stoner fail his math test?<br>He was too high to count.",
-                "What do stoners call a slow computer?<br>High-lag.",
-                "Why did the stoner stare at the frozen juice?<br>Because it was concentrate.",
-                "Why did the stoner eat the clock?<br>He wanted to get high on time.",
-                "How do you know a stoner is knocking at your door?<br>He forgot why he was there.",
-                "Why did the stoner bring a pillow to the party?<br>Because he wanted to get couch-locked.",
-                "What’s a stoner’s favorite salad?<br>Ca-nabis.",
-                "Why do stoners make terrible secret agents?<br>They keep getting caught in a puff.",
-                "How does a stoner stay cool in the summer?<br>He takes a chill pill.",
-                "What do you call a stoner with a map?<br>Lost.",
-                "Why was the stoner happy in math class?<br>He was on a higher plane.",
-                "What do stoners put on their toast?<br>High-jam.",
-                "Why did the stoner buy a boat?<br>He wanted to go high seas.",
-                "Why did the stoner fail art class?<br>He was too spaced out.",
-                "How do stoners pay for things?<br>They blaze a trail.",
-                "Why did the stoner go to the bakery?<br>He wanted some baked goods.",
-                "What did the stoner say at the beach?<br>Sea, sea, seaweed.",
-                "Why did the stoner go to the bank?<br>To check his high-interest account.",
-                "How do stoners communicate?<br>By joint messaging.",
-                "Why did the stoner stare at the fridge?<br>He was looking for some chill.",
-                "Why don’t stoners make good chefs?<br>They get baked instead of baking.",
-                "What did the stoner say to the tree?<br>Leaf me alone, I'm high.",
-                "Why did the stoner take a nap in the garden?<br>He wanted to get some fresh high air.",
-                "What’s a stoner’s favorite candy?<br>High-chews.",
-                "Why was the stoner so calm?<br>Because he was in his high mind.",
-                "How do stoners navigate?<br>They follow the high road.",
-                "Why did the stoner break up with his lighter?<br>He felt burnt out.",
-                "What did the stoner say about the chair?<br>It’s so chair-mazing, I’m sitting on it forever.",
-                "Why did the stoner bring string to the party?<br>To tie one on.",
-                "What’s a stoner’s favorite exercise?<br>Joint stretches.",
-                "Why did the stoner go to school?<br>To get a higher education.",
-                "Why did the stoner sit in the sun?<br>He wanted to get a little baked.",
-                "What do you call a stoner in a movie theater?<br>High definition."
-            ];
+    const quoteText = pool[Math.floor(Math.random() * pool.length)];
+    const jokeText = weedJokes[Math.floor(Math.random() * weedJokes.length)];
 
-            const r = Math.random();
-            let pool = normal;
-            if (r < 0.33) { pool = Math.random() < 0.5 ? serdarsk : adriansk; }
-            const quoteText = pool[Math.floor(Math.random() * pool.length)];
-            const jokeText = weedJokes[Math.floor(Math.random() * weedJokes.length)];
+    return `${quoteText}<br>💡 ${jokeText}`;
+}
 
-            return `${quoteText}<br>💡 ${jokeText}`;
-        }
+function calculateTHC() {
+    const milkFat = parseFloat(document.getElementById('milkFat').value);
+    const spreadFat = parseFloat(document.getElementById('spreadFat').value);
+    const thcPercent = parseFloat(document.getElementById('thcPercent').value);
+    const thcType = document.getElementById('thcType').value;
+    const sjokosmor = document.getElementById('sjokosmor').checked;
 
-        function calculateTHC() {
-            const grams = parseFloat(document.getElementById('grams').value) || 0;
-            let strength = parseFloat(document.getElementById('strength').value) || 0.15;
-            const consistency = parseFloat(document.getElementById('consistency').value) || 1;
-            const color = parseFloat(document.getElementById('color').value) || 1;
-            const oily = document.getElementById('oily').checked;
-            const milkFat = parseFloat(document.getElementById('milk').value) || 0.01;
-            let chocoFat = parseFloat(document.getElementById('chocoFat').value) || 0.3;
-            const useChocoButter = document.getElementById('useChocoButter').checked;
-            const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
+    // Basert på fettprosent: mer fett = bedre THC-opptak
+    const fatFactor = (milkFat/3.5 + spreadFat/50)/2;
+    const typeFactor = thcType === 'olje' ? 1.2 : thcType === 'mørk' ? 1.0 : 0.9;
+    const smorBonus = sjokosmor ? 1.1 : 1.0;
 
-            const totalTHC_raw = grams * strength * 1000;
-            let solubility = consistency * color * (oily ? 1.1 : 1); // oljete gir +10 %
-            let fatScore = milkFat * 100 * 0.6;
-            fatScore += (chocoFat * 100) * (useChocoButter ? 0.9 : 0.45);
-            const fatMultiplier = 0.55 + (fatScore / 100);
-            const totalTHC_available = totalTHC_raw * solubility * fatMultiplier;
-            const thcPerCup = totalTHC_available / cups;
-            const percentOfRaw = (thcPerCup / totalTHC_raw) * 100;
+    const estimatedTHC = thcPercent * fatFactor * typeFactor * smorBonus;
 
-            let effect = '';
-            if (thcPerCup < 10) effect = 'Mild';
-            else if (thcPerCup < 30) effect = 'Middels';
-            else if (thcPerCup < 60) effect = 'Sterk';
-            else effect = 'Ekstrem';
+    const quote = chooseQuote();
 
-            const warnEl = document.getElementById('warn');
-            if (thcPerCup > 50) {
-                warnEl.style.display = 'block';
-                warnEl.innerHTML = '⚠️ Høy dose – ta det rolig og kos deg. Ha snacks klare 🍫🍿.';
-            } else warnEl.style.display = 'none';
-
-            let extra = 3;
-            if (fatMultiplier < 0.9) extra += 3;
-            else if (fatMultiplier < 1.1) extra += 1;
-            else extra -= 0.5;
-            extra += Math.max(0, (cups - 1) * 0.6);
-            if (extra < 0.5) extra = 0.5;
-
-            const quote = chooseQuote(effect);
-            document.getElementById('out').innerHTML =
-                `<strong>THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg ` +
-                `<small>(${percentOfRaw.toFixed(1)} % av rå-THC)</small><br>` +
-                `<strong>Effekt:</strong> ${effect}<br>` +
-                `<strong>Anbefalt ekstra varighet:</strong> ca ${extra.toFixed(1)} min for fett-infusjon.<br>` +
-                `<div style="margin-top:8px;"><em>${quote}</em></div>`;
-
-            document.getElementById('metaSources').innerText = ''; // fjernet kilder
-        }
-    </script>
-
+    document.getElementById('result').innerHTML = `
+        <strong>Estimert effekt:</strong> ca. ${estimatedTHC.toFixed(1)}% absorbert THC<br><br>
+        ${quote}
+    `;
+}
+</script>
 </body>
 </html>
