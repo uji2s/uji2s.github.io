@@ -1,291 +1,318 @@
 ﻿<!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="utf-8">
-    <title>Skækkulator — THC-kakao</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 780px;
-            margin: 20px auto;
-            background: #fbfbfb;
-            padding: 18px;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-        }
+  <meta charset="utf-8">
+  <title>Skækkulator — THC-kakao</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 780px;
+      margin: 20px auto;
+      background: #fbfbfb;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 4px;
-        }
+    h1 {
+      text-align: center;
+      margin-bottom: 4px;
+    }
 
-        p.lead {
-            text-align: center;
-            color: #444;
-            margin-top: 0;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
+    p.lead {
+      text-align: center;
+      color: #444;
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
 
-        label {
-            display: block;
-            margin-top: 12px;
-            font-weight: 600;
-            color: #222;
-        }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+      color: #222;
+    }
 
-        input, select {
-            margin-top: 6px;
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
+    input, select {
+      margin-top: 6px;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
 
-        .row {
-            display: flex;
-            gap: 12px;
-        }
+    .row {
+      display: flex;
+      gap: 12px;
+    }
 
-        .col {
-            flex: 1;
-        }
+    .col {
+      flex: 1;
+    }
 
-        .checkbox-inline {
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .checkbox-inline {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .checkbox-inline label {
-            order: -1; /* tekst til venstre */
-            cursor: pointer;
-        }
+    .checkbox-inline label {
+      order: -1; /* tekst til venstre */
+      cursor: pointer;
+    }
 
-        button {
-            margin-top: 16px;
-            padding: 12px;
-            width: 100%;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 0;
-            background: #2b9aef;
-            color: #fff;
-            cursor: pointer;
-        }
+    button {
+      margin-top: 16px;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 0;
+      background: #2b9aef;
+      color: #fff;
+      cursor: pointer;
+    }
 
-        #result {
-            margin-top: 18px;
-            padding: 12px;
-            border-radius: 8px;
-            background: #fff;
-            border: 1px solid #eee;
-        }
+    #result {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #eee;
+    }
 
-        .warn {
-            background: #fff7e6;
-            border: 1px solid #ffd08a;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            color: #7a4b00;
-            display: none;
-        }
+    .warn {
+      background: #fff7e6;
+      border: 1px solid #ffd08a;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      color: #7a4b00;
+      display: none;
+    }
 
-        .note {
-            font-size: 13px;
-            color: #555;
-            margin-top: 8px;
-        }
+    .note {
+      font-size: 13px;
+      color: #555;
+      margin-top: 8px;
+    }
 
-        small {
-            color: #666;
-            display: block;
-            margin-top: 6px;
-        }
+    small {
+      color: #666;
+      display: block;
+      margin-top: 6px;
+    }
 
-        .meta {
-            font-size: 13px;
-            color: #666;
-            margin-top: 8px;
-        }
-    </style>
+    .meta {
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Skækkulator — THC-kakao</h1>
-    <p class="lead">Raskt estimat av THC per kopp med fett-justering, advarsel ved høy dose, og litt koselig tekst 🎶</p>
+  <h1>Skækkulator — THC-kakao</h1>
+  <p class="lead">Raskt estimat av THC per kopp med fett-justering, advarsel ved høy dose, og litt koselig tekst 🎶</p>
 
-    <label>Gram hasj:</label>
-    <input id="grams" type="number" min="0" step="0.1" value="1">
+  <label>Gram hasj:</label>
+  <input id="grams" type="number" min="0" step="0.1" value="1">
 
-    <label>Styrke på hasj:</label>
-    <select id="strength">
-        <option value="0.10">Svak (~10% THC)</option>
-        <option value="0.15">Middels (~15% THC)</option>
-        <option value="0.20">Sterk (~20% THC)</option>
-        <option value="0.25">Ekstra sterk (~25% THC)</option>
-        <option value="0">Ukjent (bruk gjennomsnitt 15%)</option>
-    </select>
+  <label>Styrke på hasj:</label>
+  <select id="strength">
+    <option value="0.10">Svak (~10% THC)</option>
+    <option value="0.15">Middels (~15% THC)</option>
+    <option value="0.20">Sterk (~20% THC)</option>
+    <option value="0.25">Ekstra sterk (~25% THC)</option>
+    <option value="0">Ukjent (bruk gjennomsnitt 15%)</option>
+  </select>
 
-    <label>Konsistens:</label>
-    <select id="consistency">
-        <option value="0.92">Tørr / lys</option>
-        <option value="1">Mellom</option>
-        <option value="1.08">Oljete / mørk</option>
-        <option value="1">Ukjent</option>
-    </select>
+  <label>Konsistens:</label>
+  <select id="consistency">
+    <option value="0.92">Tørr / lys</option>
+    <option value="1">Mellom</option>
+    <option value="1.08">Oljete / mørk</option>
+    <option value="1">Ukjent</option>
+  </select>
 
-    <div class="row">
-        <div class="col">
-            <label>Type melk:</label>
-            <select id="milk">
-                <option value="0.005">Ekstra lett (0.5% fett)</option>
-                <option value="0.01">Lett (1.0% fett)</option>
-                <option value="0.035">Helmelk (3.5% fett)</option>
-            </select>
-            <small>Velg den melketypen du bruker — fett øker hvor mye THC som løses i blandingen.</small>
-        </div>
-
-        <div class="col">
-            <label>Sjokopålegg:</label>
-            <select id="chocoFat">
-                <option value="0.309">Nutella (30.9%)</option>
-                <option value="0.365">First Price (36.5%)</option>
-            </select>
-            <small>Dette representerer fettandelen i sjokopålegget — høyere fett betyr mer effektiv løsing av THC i fettfase.</small>
-        </div>
+  <div class="row">
+    <div class="col">
+      <label>Type melk:</label>
+      <select id="milk">
+        <option value="0.005">Ekstra lett (0.5% fett)</option>
+        <option value="0.01">Lett (1.0% fett)</option>
+        <option value="0.035">Helmelk (3.5% fett)</option>
+      </select>
+      <small>Velg den melketypen du bruker — fett øker hvor mye THC som løses i blandingen.</small>
     </div>
 
-    <div class="checkbox-inline">
-        <label for="useChocoButter">Sjokosmør?</label>
-        <input id="useChocoButter" type="checkbox" checked>
+    <div class="col">
+      <label>Sjokopålegg:</label>
+      <select id="chocoFat">
+        <option value="0.309">Nutella (30.9%)</option>
+        <option value="0.365">First Price (36.5%)</option>
+      </select>
+      <small>Dette representerer fettandelen i sjokopålegget — høyere fett betyr mer effektiv løsing av THC i fettfase.</small>
     </div>
+  </div>
 
-    <label>Antall kopper (fordeling):</label>
-    <input id="cups" type="number" min="1" step="1" value="1">
+  <div class="checkbox-inline">
+    <label for="useChocoButter">Sjokosmør?</label>
+    <input id="useChocoButter" type="checkbox" checked>
+  </div>
 
-    <button onclick="calculateTHC()">Regn THC per kopp</button>
+  <label>Antall kopper (fordeling):</label>
+  <input id="cups" type="number" min="1" step="1" value="1">
 
-    <div id="result">
-        <div id="warn" class="warn">⚠️ Advarsel: Høy dose — vær forsiktig. Ta det rolig, start med liten mengde og kos deg.</div>
-        <div id="out"></div>
-        <div class="meta" id="metaSources"></div>
-    </div>
+  <button onclick="calculateTHC()">Regn THC per kopp</button>
 
-    <script>
-        function chooseQuote() {
-            const normal = [
-                "Bare kos deg, ikke stress – livet er kakao og fred ☕🌿",
-                "Chill, sett deg i sofaen, slå på litt musikk og smelt inn i universet 🎶",
-                "En kopp med ro, bror. Ikke mer, ikke mindre 😌",
-                "THC + kakao = kjærlighet med fett 🌈",
-                "Du er trygg, du er myk, du er varm – som sjokolade i panna 😴",
-                "Alt går sakte, men riktig. Akkurat som å røre i en gryte med kos 🍫",
-                "Livet er fett, literally, når du har helmelk i miksen 💪",
-                "Du blir ikke høy, du blir opplyst 🔥",
-                "Om du hører lyder i veggen – det er bare deg selv, bror 😳",
-                "Kakaoen smiler til deg nå. Smil tilbake 😌",
-                "Legg deg ned, bli en teppeburrito og bare lev 🥰",
-                "Ikke tenk for mye – bare flyt, du eier lufta nå 💨",
-                "Du er i slow motion nå, men verden følger ikke med 😂",
-                "Hvis du mister koppen, så var det skjebnen ☕💀",
-                "Alt er chill til du ser lyset danse på taket, da er du midt i sonen 🌌",
-                "Dette er ikke bare kakao, det er livsfilosofi i koppform 🤯",
-                "Du kjenner det ikke først, men plutselig – pang, kos 💚",
-                "Du smelter som smør i varm melk nå 😵",
-                "Ikke prøv å stå, bror. Sofaen vant kampen 🛋️",
-                "Kos, ro, varme, fred. THC sitt evangelium 😇"
-            ];
+  <div id="result">
+    <div id="warn" class="warn">⚠️ Advarsel: Høy dose — vær forsiktig. Ta det rolig, start med liten mengde og kos deg.</div>
+    <div id="out"></div>
+    <div class="meta" id="metaSources"></div>
+  </div>
 
-            const serdarsk = [
-                "Bror jeg drikker skækkakao nå jeg flyr inni kjøkken skap ass 💀",
-                "Jeg er snill gutt idag prestegården fra serdar evensen ☕",
-                "Kan jeg komme på besøk serdar morra kveld klokken frem ettermaten klokken seks kveld serdar er hjemme idag 😂",
-                "Jeg er snill gutt idag storbråten fra serdar evensen fra serdar evensen 😭",
-                "God pinsehelg marius rabe Nordberg hagen fra serdar evensen 🌿",
-                "Jeg har spist dessvar idag og kakaon gjør meg varm i sjel 😌",
-                "Bror jeg tror taklampa sa navnet mitt akkurat 💡",
-                "Kakao e som kos fra Gud men med litt hasj i 🍫🙏",
-                "Alt snurrer ass men jeg smiler så det går bra hahaha 😭",
-                "Jeg føler meg som smør på pizza bror helt smelta 😩",
-                "Kakao traff meg i hjernen bror jeg snakker med stol nå 🤯"
-            ];
+  <script>
+    function chooseQuote() {
+      const normal = [
+        "Bare kos deg, ikke stress – livet er kakao og fred ☕🌿",
+        "Chill, sett deg i sofaen, slå på litt musikk og smelt inn i universet 🎶",
+        "En kopp med ro, bror. Ikke mer, ikke mindre 😌",
+        "THC + kakao = kjærlighet med fett 🌈",
+        "Du er trygg, du er myk, du er varm – som sjokolade i panna 😴",
+        "Alt går sakte, men riktig. Akkurat som å røre i en gryte med kos 🍫",
+        "Livet er fett, literally, når du har helmelk i miksen 💪",
+        "Du blir ikke høy, du blir opplyst 🔥",
+        "Om du hører lyder i veggen – det er bare deg selv, bror 😳",
+        "Kakaoen smiler til deg nå. Smil tilbake 😌",
+        "Legg deg ned, bli en teppeburrito og bare lev 🥰",
+        "Ikke tenk for mye – bare flyt, du eier lufta nå 💨",
+        "Du er i slow motion nå, men verden følger ikke med 😂",
+        "Hvis du mister koppen, så var det skjebnen ☕💀",
+        "Alt er chill til du ser lyset danse på taket, da er du midt i sonen 🌌",
+        "Dette er ikke bare kakao, det er livsfilosofi i koppform 🤯",
+        "Du kjenner det ikke først, men plutselig – pang, kos 💚",
+        "Du smelter som smør i varm melk nå 😵",
+        "Ikke prøv å stå, bror. Sofaen vant kampen 🛋️",
+        "Kos, ro, varme, fred. THC sitt evangelium 😇"
+      ];
 
-            const adriansk = [
-                "🌿 Me molto relaxino <small>(Jeg er veldig avslappet)</small>",
-                "😌 Me senti soft vibra <small>(Jeg føler myke vibber)</small>",
-                "🌌 Woah me trippi stilo <small>(Woah, jeg på trip-stemning)</small>",
-                "🍫 Me gusta kakaolino <small>(Jeg liker kakaoen)</small>",
-                "😂 Me faccia sorriso <small>(Ansiktet mitt smiler)</small>"
-            ];
+      // 20 ekte serdarsk quotes
+const serdarsk = [
+"Jeg koser chill ass idag prestegården 😌",
+"RAAAR hahah jeg har spist dessvar idag 🔥",
+"Jeg er snill gutt idag storbråten fra serdar evensen 🤙",
+"God pinsehelg fra serdar evensen 🫶",
+"Kan jeg komme på besøk serdar morra kveld klokken frem ettermaten 🏠",
+"Jeg er snill gutt idag prestegården, alt soft ass 😭",
+"Jeg har spist dessvar idag, sofaen danser RAAAR 😵",
+"Jeg er snill gutt idag storbråten fra serdar evensen fra serdar evensen 😌",
+"God pinsehelg fra serdar evensen bm 🔥",
+"Kan jeg komme på besøk serdar morra kveld klokken frem klokken seks kveld ass 🤯",
+"Jeg koser chill ass idag prestegården RAAAR hahah",
+"Jeg har spist dessvar idag, lyset smiler til meg bm 😭",
+"Jeg er snill gutt idag storbråten fra serdar evensen, alt chill ass 🤙",
+"God pinsehelg fra serdar evensen hahahaha 😵",
+"Kan jeg komme på besøk serdar morra kveld klokken sju kveld åtte kveld serdar 🔮",
+"Jeg er snill gutt idag prestegården, dessvar vibes ass 😎",
+"RAAAR hahah storbråten fra serdar evensen chill bm 🔥",
+"Jeg koser chill ass idag prestegården, morra vibes 😌",
+"Jeg har spist dessvar idag, alt soft bm 🤯",
+"Kan jeg komme på besøk serdar morra kveld klokken frem klokken ni kveld serdar 🏠"
+];
 
-            const r = Math.random();
-            if (r < 0.33) return serdarsk[Math.floor(Math.random() * serdarsk.length)];
-            if (r < 0.66) return adriansk[Math.floor(Math.random() * adriansk.length)];
-            return normal[Math.floor(Math.random() * normal.length)];
-        }
+// 20 ekte adriansk quotes
+const adriansk = [
+"Flaminginio mayoneso de tomato el makoroni no onion 🌿",
+"HOla seniorita, much a gracias como estation 😎",
+"Monday rutine, drive to burger king, take a junior pack for the sister olololo 🍔",
+"!?!?! No firstein espanol, ima turkey bambino 😂",
+"Me fioleto de fishero no comprendo la policies, bigimoto royale inni minni hazan furunkulo 💀",
+"Nihso Mamao ma ublanca de kaka ne smotrit film Ladno 😵",
+"Mi amore espresso makiata makita por favour ☕",
+"Fenanilo caprisono pomodoro lovilo olololo Ola lo 🔮",
+"Ke ma veninero? olololoooo 🌌",
+"Yo me amore siempre con tu, olololo, fenanilo pomodoro caprisono lovilo bm 🤙",
+"Ma ceba can ay geto uwue 😭",
+"🌿 Me molto relaxino <small>(Jeg er veldig avslappet)</small>",
+"😌 Me senti soft vibra <small>(Jeg føler myke vibber)</small>",
+"🌌 Woah me trippi stilo <small>(Woah, jeg på trip-stemning)</small>",
+"🍫 Me gusta kakaolino <small>(Jeg liker kakaoen)</small>",
+"😂 Me faccia sorriso <small>(Ansiktet mitt smiler)</small>",
+"🌟 Me molto chillino, vibes grandioso bm 🔥",
+"RAAAR me trippi stilo, bigimoto 🫶",
+"Woah me svevaro alto, el yo ass 😵",
+"Me mucho felizo oggi, olololo vibes 💫",
+"💀 Me faccio lolz, fenanilo pomodoro caprisono lovilo bm hahahaha"
+];
 
-        function calculateTHC() {
-            const grams = parseFloat(document.getElementById('grams').value) || 0;
-            let strength = parseFloat(document.getElementById('strength').value);
-            const consistency = parseFloat(document.getElementById('consistency').value) || 1;
-            const milkFat = parseFloat(document.getElementById('milk').value) || 0.01;
-            const chocoFat = parseFloat(document.getElementById('chocoFat').value) || 0.309;
-            const useChocoButter = document.getElementById('useChocoButter').checked;
-            const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
+      const r = Math.random();
+      if (r < 0.33) return serdarsk[Math.floor(Math.random() * serdarsk.length)];
+      if (r < 0.66) return adriansk[Math.floor(Math.random() * adriansk.length)];
+      return normal[Math.floor(Math.random() * normal.length)];
+    }
 
-            if (strength === 0) strength = 0.15;
+    function calculateTHC() {
+      const grams = parseFloat(document.getElementById('grams').value) || 0;
+      let strength = parseFloat(document.getElementById('strength').value);
+      const consistency = parseFloat(document.getElementById('consistency').value) || 1;
+      const milkFat = parseFloat(document.getElementById('milk').value) || 0.01;
+      const chocoFat = parseFloat(document.getElementById('chocoFat').value) || 0.309;
+      const useChocoButter = document.getElementById('useChocoButter').checked;
+      const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
 
-            const totalTHC_raw = grams * strength * 1000;
-            const adjByConsistency = consistency;
+      if (strength === 0) strength = 0.15;
 
-            let fatScore = milkFat * 100;
-            fatScore = fatScore * 0.6;
-            if (useChocoButter) fatScore += chocoFat * 100 * 0.9;
-            else fatScore += chocoFat * 100 * 0.45;
-            const fatMultiplier = 0.55 + fatScore / 100;
+      const totalTHC_raw = grams * strength * 1000;
+      const adjByConsistency = consistency;
 
-            const totalTHC_available = totalTHC_raw * adjByConsistency * fatMultiplier;
-            const thcPerCup = totalTHC_available / cups;
-            const percentOfRawPerCup = (thcPerCup / totalTHC_raw) * 100;
+      let fatScore = milkFat * 100;
+      fatScore = fatScore * 0.6;
+      if (useChocoButter) fatScore += chocoFat * 100 * 0.9;
+      else fatScore += chocoFat * 100 * 0.45;
+      const fatMultiplier = 0.55 + fatScore / 100;
 
-            let effect = '';
-            if (thcPerCup < 10) effect = 'Mild';
-            else if (thcPerCup < 30) effect = 'Middels';
-            else if (thcPerCup < 60) effect = 'Sterk';
-            else effect = 'Ekstrem';
+      const totalTHC_available = totalTHC_raw * adjByConsistency * fatMultiplier;
+      const thcPerCup = totalTHC_available / cups;
+      const percentOfRawPerCup = (thcPerCup / totalTHC_raw) * 100;
 
-            const warnEl = document.getElementById('warn');
-            if (thcPerCup > 50) {
-                warnEl.style.display = 'block';
-                warnEl.innerHTML = '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp). Ta det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
-            } else warnEl.style.display = 'none';
+      let effect = '';
+      if (thcPerCup < 10) effect = 'Mild';
+      else if (thcPerCup < 30) effect = 'Middels';
+      else if (thcPerCup < 60) effect = 'Sterk';
+      else effect = 'Ekstrem';
 
-            let baselineExtra = 3;
-            let extraTime = baselineExtra;
-            if (fatMultiplier < 0.9) extraTime += 3;
-            else if (fatMultiplier < 1.1) extraTime += 1;
-            else extraTime -= 0.5;
-            extraTime += Math.max(0, (cups - 1) * 0.6);
-            if (extraTime < 0.5) extraTime = 0.5;
+      const warnEl = document.getElementById('warn');
+      if (thcPerCup > 50) {
+        warnEl.style.display = 'block';
+        warnEl.innerHTML = '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp). Ta det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
+      } else warnEl.style.display = 'none';
 
-            const quote = chooseQuote();
+      let baselineExtra = 3;
+      let extraTime = baselineExtra;
+      if (fatMultiplier < 0.9) extraTime += 3;
+      else if (fatMultiplier < 1.1) extraTime += 1;
+      else extraTime -= 0.5;
+      extraTime += Math.max(0, (cups - 1) * 0.6);
+      if (extraTime < 0.5) extraTime = 0.5;
 
-            const out = document.getElementById('out');
-            out.innerHTML =
-                `<strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg` +
-                ` <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>` +
-                `<strong>Estimert effekt:</strong> ${effect}<br>` +
-                `<strong>Anbefalt ekstra varighet (konservativ, ikke-temperatur):</strong> ca ${extraTime.toFixed(1)} minutter ekstra for god fett-infusjon / oppløsning (justert etter melk & sjokofett).<br>` +
-                `<div style="margin-top:8px;"><em>${quote}</em></div>`;
+      const quote = chooseQuote();
 
-            const meta = document.getElementById('metaSources');
-            meta.innerHTML = 'Kilder: forskning som beskriver at THC er fettløselig og at varme aktiverer THCA → THC (se publikasjoner fra NCBI/PMC, CDC, og gjennomgangsartikler).';
-        }
-    </script>
+      const out = document.getElementById('out');
+      out.innerHTML =
+        `<strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg` +
+        ` <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>` +
+        `<strong>Estimert effekt:</strong> ${effect}<br>` +
+        `<strong>Anbefalt ekstra varighet (konservativ, ikke-temperatur):</strong> ca ${extraTime.toFixed(1)} minutter ekstra for god fett-infusjon / oppløsning (justert etter melk & sjokofett).<br>` +
+        `<div style="margin-top:8px;"><em>${quote}</em></div>`;
+
+      const meta = document.getElementById('metaSources');
+      meta.innerHTML = 'Kilder: forskning som beskriver at THC er fettløselig og at varme aktiverer THCA → THC (se publikasjoner fra NCBI/PMC, CDC, og gjennomgangsartikler).';
+    }
+  </script>
 </body>
 </html>
