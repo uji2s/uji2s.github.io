@@ -224,7 +224,7 @@ function enableInlineEditing() {
 
         const createInput = (placeholder) => {
             const input = document.createElement("input");
-            input.type = "text";  // plain text for Safari kompatibilitet
+            input.type = "text"; // Safari-safe
             input.value = "";
             input.placeholder = placeholder;
             input.className = "inline-edit-input";
@@ -234,7 +234,7 @@ function enableInlineEditing() {
         const finishDate = (input) => {
             let val = input.value.trim();
             let original = entries[index].date;
-            let newDate = parseDate(val); // utils-funksjon for parsing
+            let newDate = parseDate(val);
 
             if (!newDate || isNaN(newDate.getTime())) {
                 newDate = original instanceof Date ? new Date(original) : new Date();
@@ -263,13 +263,12 @@ function enableInlineEditing() {
 
             entries[index].amount = num;
 
-            // Oppdater dato kun hvis entry er "dagens saldo"
             if ((entries[index].desc || "").toLowerCase() === "dagens saldo") {
                 entries[index].date = new Date();
             }
         };
 
-        const setupInline = (td, finishFn, isDate=false) => {
+        const setupInline = (td, finishFn, isDate = false) => {
             td.addEventListener("click", () => {
                 if (td.querySelector("input")) return;
 
@@ -279,7 +278,6 @@ function enableInlineEditing() {
                 td.textContent = "";
                 td.appendChild(input);
 
-                // Robust autofocus og select
                 input.focus({ preventScroll: true });
                 input.select();
 
@@ -292,6 +290,10 @@ function enableInlineEditing() {
                     } else {
                         finishFn(input);
                     }
+
+                    // 🔥 FIKSEN: sorter etter dato før render
+                    entries.sort((a, b) => a.date - b.date);
+
                     saveStorage();
                     renderEntries();
                 };
@@ -302,7 +304,7 @@ function enableInlineEditing() {
                         finish();
                     } else if (e.key === "Escape") {
                         e.preventDefault();
-                        renderEntries(); // fallback
+                        renderEntries();
                     }
                 };
 
