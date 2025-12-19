@@ -621,10 +621,44 @@ function exportEntriesToBase64() {
         alert("Ingen oppføringer å eksportere.");
         return;
     }
-    const dataStr = JSON.stringify(entries.map(e => ({...e, date: e.date instanceof Date ? e.date.toISOString() : e.date})));
+
+    const dataStr = JSON.stringify(
+        entries.map(e => ({
+            ...e,
+            date: e.date instanceof Date ? e.date.toISOString() : e.date
+        }))
+    );
+
     const uint8array = new TextEncoder().encode(dataStr);
     const b64 = btoa(String.fromCharCode(...uint8array));
-    prompt("Kopier Base64-strengen under:", b64);
+
+    // 🔥 AUTOKOPIER TIL CLIPBOARD (iOS Safari-safe)
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(b64).then(() => {
+            alert("Base64 kopiert til utklippstavlen");
+        }).catch(() => {
+            legacy_copy(b64);
+            alert("Base64 kopiert til utklippstavlen");
+        });
+    } else {
+        legacy_copy(b64);
+        alert("Base64 kopiert til utklippstavlen");
+    }
+}
+
+// fallback for iOS Safari
+function legacy_copy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
 }
 
 function importEntriesFromBase64() {
