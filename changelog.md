@@ -1,8 +1,6 @@
 
 ### Changed
-- [27-10-2025] kakaotest
 - [28-09-2025] feat: export to base64
-- [28-09-2025] upd
 - [27-09-2025] feat: sort by best budget
 - [27-09-2025] feat: gjeldkalkulator
 - [27-09-2025] qp: separate entries in localStorage
@@ -30,15 +28,11 @@
 - [02-09-2025] final v1
 
 ### Fixed
-- [19-12-2025] fix: base64 phone fix
-- [19-12-2025] fix: inline date editing auto adjustment
-- [28-09-2025] fix: phone friendly base64
 - [27-09-2025] fix: sorting
 - [24-09-2025] fix: inline editing will no longer set todays date when editing except on "dagens saldo"
 - [24-09-2025] fix: prevent date change on non-dagens saldo entries and include starting balance in filtered detailed view
 - [17-09-2025] fixed inline editing to adjust to todays date
 - [17-09-2025] fix: safari inline editing click-out, and inputbox bugs.
-- [16-09-2025] fixed GÇö
 - [15-09-2025] fix: macos changelog gen
 - [08-09-2025] smooth scroll, fixed scroll on phone in changelog
 - [08-09-2025] fix for scrolling part 2
