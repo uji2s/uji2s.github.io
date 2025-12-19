@@ -7,7 +7,6 @@ $categories = @{
 }
 
 $outFile = "changelog.md"
-Set-Content -Path $outFile -Value ""  # clear
 
 # Hent log med date, subject og body
 $log = git log --pretty=format:"%ad|%s|%B" --date=short
@@ -27,7 +26,7 @@ foreach ($entry in $commits) {
     $body = ""
     if ($parts.Count -eq 3) { $body = $parts[2].Trim() }
 
-    # --- NY SJEKK: hopp over commits som starter med "update" ---
+    # Hopp over commits som starter med "update"
     if ($subject.ToLower().StartsWith("update")) { continue }
 
     # Fjern subject fra body hvis den er gjentatt
@@ -37,7 +36,10 @@ foreach ($entry in $commits) {
     $cat = "Changed"
     foreach ($key in $categories.Keys) {
         foreach ($kw in $categories[$key]) {
-            if ($subject.ToLower().Contains($kw)) { $cat = $key; break }
+            if ($subject.ToLower().Contains($kw)) { 
+                $cat = $key
+                break
+            }
         }
     }
 
@@ -48,23 +50,28 @@ foreach ($entry in $commits) {
     }
 }
 
-# Skriv changelog
+# Bygg changelog som én streng
+$content = ""
+
 foreach ($cat in @("Changed","Fixed","Removed")) {
     if ($commitGroups[$cat].Count -eq 0) { continue }
 
-    Add-Content $outFile "### $cat"
+    $content += "### $cat`n"
     $sorted = $commitGroups[$cat] | Sort-Object {[datetime]$_.date} -Descending
 
     foreach ($c in $sorted) {
         $dt = (Get-Date $c.date -Format "dd-MM-yyyy")
-        Add-Content $outFile "- [$dt] $($c.subject)"
+        $content += "- [$dt] $($c.subject)`n"
         if ($c.body -ne "") {
             foreach ($line in $c.body -split "`n") {
-                Add-Content $outFile "    $line"
+                $content += "    $line`n"
             }
         }
     }
-    Add-Content $outFile ""  # linjeskift mellom kategorier
+    $content += "`n"  # linjeskift mellom kategorier
 }
+
+# Skriv changelog med UTF-8 encoding
+Set-Content -Path $outFile -Value $content -Encoding UTF8
 
 Write-Host "Changelog generated to $outFile"

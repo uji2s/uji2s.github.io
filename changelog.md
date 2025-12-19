@@ -1,5 +1,4 @@
-
-### Changed
+﻿### Changed
 - [19-12-2025] upd
 - [19-12-2025] Revert "upd"
 - [27-10-2025] kakaotest
@@ -40,7 +39,7 @@
 - [24-09-2025] fix: prevent date change on non-dagens saldo entries and include starting balance in filtered detailed view
 - [17-09-2025] fixed inline editing to adjust to todays date
 - [17-09-2025] fix: safari inline editing click-out, and inputbox bugs.
-- [16-09-2025] fixed G��
+- [16-09-2025] fixed ΓÇö
 - [15-09-2025] fix: macos changelog gen
 - [08-09-2025] smooth scroll, fixed scroll on phone in changelog
 - [08-09-2025] fix for scrolling part 2
@@ -60,4 +59,5 @@
 ### Removed
 - [24-09-2025] fix: clear cache now removes all entries from local storage and updates table
 - [02-09-2025] Delete index_og.html
+
 
