@@ -264,7 +264,9 @@ function enableInlineEditing() {
             entries[index].amount = num;
 
             if ((entries[index].desc || "").toLowerCase() === "dagens saldo") {
-                entries[index].date = new Date();
+                const today = new Date();
+                today.setHours(0,0,0,0); // 🔥 eneste faktiske fix
+                entries[index].date = today;
             }
         };
 
@@ -291,7 +293,6 @@ function enableInlineEditing() {
                         finishFn(input);
                     }
 
-                    // 🔥 FIKSEN: sorter etter dato før render
                     entries.sort((a, b) => a.date - b.date);
 
                     saveStorage();
