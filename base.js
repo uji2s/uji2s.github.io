@@ -215,7 +215,6 @@ if (sortSelect) {
   });
 }
 
-
 // --- Inline editing ---
 function enableInlineEditing() {
     entryTableBody.querySelectorAll("tr").forEach((tr, index) => {
@@ -244,42 +243,35 @@ function enableInlineEditing() {
         };
 
         const finishAmount = (input) => {
-            let val = input.value.trim().replace(/—/g,'--');
+            let val = input.value.trim().replace(/—/g, '--');
             let num = entries[index].amount;
 
-            // ++ / --
-            if (val.startsWith('++')) {
-                const delta = parseFloat(val.slice(2));
-                if (!isNaN(delta)) num += delta;
-
-            } else if (val.startsWith('--')) {
-                const delta = parseFloat(val.slice(2));
-                if (!isNaN(delta)) num -= delta;
-
-            } else {
-                // 🔥 inline kalkulator
-                // tillat kun tall + - * / . () og mellomrom
-                if (/^[0-9+\-*/().\s]+$/.test(val)) {
-                    try {
-                        const result = Function(`"use strict"; return (${val})`)();
-                        if (typeof result === "number" && !isNaN(result)) {
-                            num = result;
-                        }
-                    } catch {
-                        // fallback under
-                    }
-                } else {
-                    // fallback: vanlig parsing
-                    const parsed = parseFloat(val.replace(/[^0-9.-]/g,""));
-                    if (!isNaN(parsed)) num = parsed;
+            const tryEval = (expr) => {
+                if (!/^[0-9+\-*/().\s]+$/.test(expr)) return null;
+                try {
+                    const result = Function('"use strict";return (' + expr + ')')();
+                    return typeof result === "number" && isFinite(result) ? result : null;
+                } catch {
+                    return null;
                 }
+            };
+
+            if (val.startsWith('++')) {
+                const delta = tryEval(val.slice(2));
+                if (delta !== null) num += delta;
+            } else if (val.startsWith('--')) {
+                const delta = tryEval(val.slice(2));
+                if (delta !== null) num -= delta;
+            } else {
+                const result = tryEval(val);
+                if (result !== null) num = result;
             }
 
             entries[index].amount = num;
 
             if ((entries[index].desc || "").toLowerCase() === "dagens saldo") {
                 const today = new Date();
-                today.setHours(0,0,0,0);
+                today.setHours(0, 0, 0, 0);
                 entries[index].date = today;
             }
         };
@@ -307,7 +299,17 @@ function enableInlineEditing() {
                         finishFn(input);
                     }
 
-                    entries.sort((a, b) => a.date - b.date);
+                    // 🔥 SPESIALREGEL: dagens saldo alltid øverst
+                    entries.sort((a, b) => {
+                        const aSaldo = (a.desc || "").toLowerCase() === "dagens saldo";
+                        const bSaldo = (b.desc || "").toLowerCase() === "dagens saldo";
+
+                        if (aSaldo && !bSaldo) return -1;
+                        if (!aSaldo && bSaldo) return 1;
+
+                        return a.date - b.date;
+                    });
+
                     saveStorage();
                     renderEntries();
                 };
