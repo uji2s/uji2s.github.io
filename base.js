@@ -245,27 +245,41 @@ function enableInlineEditing() {
 
         const finishAmount = (input) => {
             let val = input.value.trim().replace(/—/g,'--');
-            let num;
+            let num = entries[index].amount;
 
+            // ++ / --
             if (val.startsWith('++')) {
-                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
-                num = isNaN(delta) ? entries[index].amount : entries[index].amount + delta;
+                const delta = parseFloat(val.slice(2));
+                if (!isNaN(delta)) num += delta;
+
             } else if (val.startsWith('--')) {
-                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
-                num = isNaN(delta) ? entries[index].amount : entries[index].amount - delta;
-            } else if (val.startsWith('-')) {
-                num = parseFloat(val.replace(/[^0-9.-]/g,""));
-                if (isNaN(num)) num = entries[index].amount;
+                const delta = parseFloat(val.slice(2));
+                if (!isNaN(delta)) num -= delta;
+
             } else {
-                num = parseFloat(val.replace(/[^0-9.]/g,""));
-                if (isNaN(num)) num = entries[index].amount;
+                // 🔥 inline kalkulator
+                // tillat kun tall + - * / . () og mellomrom
+                if (/^[0-9+\-*/().\s]+$/.test(val)) {
+                    try {
+                        const result = Function(`"use strict"; return (${val})`)();
+                        if (typeof result === "number" && !isNaN(result)) {
+                            num = result;
+                        }
+                    } catch {
+                        // fallback under
+                    }
+                } else {
+                    // fallback: vanlig parsing
+                    const parsed = parseFloat(val.replace(/[^0-9.-]/g,""));
+                    if (!isNaN(parsed)) num = parsed;
+                }
             }
 
             entries[index].amount = num;
 
             if ((entries[index].desc || "").toLowerCase() === "dagens saldo") {
                 const today = new Date();
-                today.setHours(0,0,0,0); // 🔥 eneste faktiske fix
+                today.setHours(0,0,0,0);
                 entries[index].date = today;
             }
         };
@@ -294,7 +308,6 @@ function enableInlineEditing() {
                     }
 
                     entries.sort((a, b) => a.date - b.date);
-
                     saveStorage();
                     renderEntries();
                 };
