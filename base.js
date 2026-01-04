@@ -243,35 +243,37 @@ function enableInlineEditing() {
         };
 
         const finishAmount = (input) => {
-            let val = input.value.trim().replace(/—/g, '--');
-            let num = entries[index].amount;
+            let val = input.value.trim().replace(/—/g,'--');
+            let num;
 
-            const tryEval = (expr) => {
-                if (!/^[0-9+\-*/().\s]+$/.test(expr)) return null;
-                try {
-                    const result = Function('"use strict";return (' + expr + ')')();
-                    return typeof result === "number" && isFinite(result) ? result : null;
-                } catch {
-                    return null;
-                }
-            };
-
+            // kalkulasjon
             if (val.startsWith('++')) {
-                const delta = tryEval(val.slice(2));
-                if (delta !== null) num += delta;
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? entries[index].amount : entries[index].amount + delta;
             } else if (val.startsWith('--')) {
-                const delta = tryEval(val.slice(2));
-                if (delta !== null) num -= delta;
+                const delta = parseFloat(val.slice(2).replace(/[^0-9.]/g,""));
+                num = isNaN(delta) ? entries[index].amount : entries[index].amount - delta;
+            } else if (val.startsWith('-')) {
+                num = parseFloat(val.replace(/[^0-9.-]/g,""));
+                if (isNaN(num)) num = entries[index].amount;
             } else {
-                const result = tryEval(val);
-                if (result !== null) num = result;
+                // inline kalkulasjon: eval trygg-ish med bare tall og +-*/.
+                try {
+                    const safeVal = val.replace(/[^0-9+\-*/().]/g,"");
+                    num = eval(safeVal);
+                    if (isNaN(num)) num = entries[index].amount;
+                } catch {
+                    num = entries[index].amount;
+                }
             }
 
             entries[index].amount = num;
 
+            // spesialregel for dagens saldo
             if ((entries[index].desc || "").toLowerCase() === "dagens saldo") {
                 const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                today.setFullYear(2000, 0, 1); // alltid 1. januar 2000
+                today.setHours(0,0,0,0);
                 entries[index].date = today;
             }
         };
@@ -299,15 +301,20 @@ function enableInlineEditing() {
                         finishFn(input);
                     }
 
-                    // 🔥 SPESIALREGEL: dagens saldo alltid øverst
+                    // --- 🔥 SORTERING ---
                     entries.sort((a, b) => {
-                        const aSaldo = (a.desc || "").toLowerCase() === "dagens saldo";
-                        const bSaldo = (b.desc || "").toLowerCase() === "dagens saldo";
+                        // dagens saldo alltid først
+                        if ((a.desc || "").toLowerCase() === "dagens saldo") return -1;
+                        if ((b.desc || "").toLowerCase() === "dagens saldo") return 1;
 
-                        if (aSaldo && !bSaldo) return -1;
-                        if (!aSaldo && bSaldo) return 1;
+                        // desember tar år med
+                        if (a.date.getMonth() === 11 && b.date.getMonth() === 11) {
+                            return a.date - b.date;
+                        }
 
-                        return a.date - b.date;
+                        const monthDayA = a.date.getMonth()*100 + a.date.getDate();
+                        const monthDayB = b.date.getMonth()*100 + b.date.getDate();
+                        return monthDayA - monthDayB;
                     });
 
                     saveStorage();
