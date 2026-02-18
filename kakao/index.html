@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
   <meta charset="utf-8">
@@ -62,7 +62,7 @@
     }
 
     .checkbox-inline label {
-      order: -1; /* tekst til venstre */
+      order: -1;
       cursor: pointer;
     }
 
@@ -120,16 +120,31 @@
   <p class="lead">Raskt estimat av THC per kopp med fett-justering, advarsel ved høy dose, og litt koselig tekst 🎶</p>
 
   <label>Gram hasj:</label>
-  <input id="grams" type="number" min="0" step="0.1" value="1">
+  <input id="grams" type="number" min="0" step="0.01" value="1">
+
+  <div class="checkbox-inline">
+    <label for="manualInput">Manual input</label>
+    <input id="manualInput" type="checkbox">
+  </div>
 
   <label>Styrke på hasj:</label>
-  <select id="strength">
+
+  <select id="strengthSelect">
     <option value="0.10">Svak (~10% THC)</option>
     <option value="0.15">Middels (~15% THC)</option>
     <option value="0.20">Sterk (~20% THC)</option>
     <option value="0.25">Ekstra sterk (~25% THC)</option>
     <option value="0">Ukjent (bruk gjennomsnitt 15%)</option>
   </select>
+
+  <input
+    id="strengthManual"
+    type="number"
+    min="0"
+    max="100"
+    step="0.1"
+    placeholder="THC %"
+    style="display:none;">
 
   <label>Konsistens:</label>
   <select id="consistency">
@@ -142,20 +157,40 @@
   <div class="row">
     <div class="col">
       <label>Type melk:</label>
-      <select id="milk">
+
+      <select id="milkSelect">
         <option value="0.005">Ekstra lett (0.5% fett)</option>
         <option value="0.01">Lett (1.0% fett)</option>
         <option value="0.035">Helmelk (3.5% fett)</option>
       </select>
+
+      <input
+        id="milkManual"
+        type="number"
+        min="0"
+        step="0.1"
+        placeholder="Fett % melk"
+        style="display:none;">
+
       <small>Velg den melketypen du bruker — fett øker hvor mye THC som løses i blandingen.</small>
     </div>
 
     <div class="col">
       <label>Sjokopålegg:</label>
-      <select id="chocoFat">
+
+      <select id="chocoFatSelect">
         <option value="0.309">Nutella (30.9%)</option>
         <option value="0.365">First Price (36.5%)</option>
       </select>
+
+      <input
+        id="chocoFatManual"
+        type="number"
+        min="0"
+        step="0.1"
+        placeholder="Fett % sjokopålegg"
+        style="display:none;">
+
       <small>Dette representerer fettandelen i sjokopålegget — høyere fett betyr mer effektiv løsing av THC i fettfase.</small>
     </div>
   </div>
@@ -171,148 +206,138 @@
   <button onclick="calculateTHC()">Regn THC per kopp</button>
 
   <div id="result">
-    <div id="warn" class="warn">⚠️ Advarsel: Høy dose — vær forsiktig. Ta det rolig, start med liten mengde og kos deg.</div>
+    <div id="warn" class="warn"></div>
     <div id="out"></div>
     <div class="meta" id="metaSources"></div>
   </div>
 
-  <script>
-    function chooseQuote() {
-      const normal = [
-        "Bare kos deg, ikke stress – livet er kakao og fred ☕🌿",
-        "Chill, sett deg i sofaen, slå på litt musikk og smelt inn i universet 🎶",
-        "En kopp med ro, bror. Ikke mer, ikke mindre 😌",
-        "THC + kakao = kjærlighet med fett 🌈",
-        "Du er trygg, du er myk, du er varm – som sjokolade i panna 😴",
-        "Alt går sakte, men riktig. Akkurat som å røre i en gryte med kos 🍫",
-        "Livet er fett, literally, når du har helmelk i miksen 💪",
-        "Du blir ikke høy, du blir opplyst 🔥",
-        "Om du hører lyder i veggen – det er bare deg selv, bror 😳",
-        "Kakaoen smiler til deg nå. Smil tilbake 😌",
-        "Legg deg ned, bli en teppeburrito og bare lev 🥰",
-        "Ikke tenk for mye – bare flyt, du eier lufta nå 💨",
-        "Du er i slow motion nå, men verden følger ikke med 😂",
-        "Hvis du mister koppen, så var det skjebnen ☕💀",
-        "Alt er chill til du ser lyset danse på taket, da er du midt i sonen 🌌",
-        "Dette er ikke bare kakao, det er livsfilosofi i koppform 🤯",
-        "Du kjenner det ikke først, men plutselig – pang, kos 💚",
-        "Du smelter som smør i varm melk nå 😵",
-        "Ikke prøv å stå, bror. Sofaen vant kampen 🛋️",
-        "Kos, ro, varme, fred. THC sitt evangelium 😇"
-      ];
+<script>
+document.getElementById('manualInput').addEventListener('change', function () {
 
-      // 20 ekte serdarsk quotes
-const serdarsk = [
-"Jeg koser chill ass idag prestegården 😌",
-"RAAAR hahah jeg har spist dessvar idag 🔥",
-"Jeg er snill gutt idag storbråten fra serdar evensen 🤙",
-"God pinsehelg fra serdar evensen 🫶",
-"Kan jeg komme på besøk serdar morra kveld klokken frem ettermaten 🏠",
-"Jeg er snill gutt idag prestegården, alt soft ass 😭",
-"Jeg har spist dessvar idag, sofaen danser RAAAR 😵",
-"Jeg er snill gutt idag storbråten fra serdar evensen fra serdar evensen 😌",
-"God pinsehelg fra serdar evensen bm 🔥",
-"Kan jeg komme på besøk serdar morra kveld klokken frem klokken seks kveld ass 🤯",
-"Jeg koser chill ass idag prestegården RAAAR hahah",
-"Jeg har spist dessvar idag, lyset smiler til meg bm 😭",
-"Jeg er snill gutt idag storbråten fra serdar evensen, alt chill ass 🤙",
-"God pinsehelg fra serdar evensen hahahaha 😵",
-"Kan jeg komme på besøk serdar morra kveld klokken sju kveld åtte kveld serdar 🔮",
-"Jeg er snill gutt idag prestegården, dessvar vibes ass 😎",
-"RAAAR hahah storbråten fra serdar evensen chill bm 🔥",
-"Jeg koser chill ass idag prestegården, morra vibes 😌",
-"Jeg har spist dessvar idag, alt soft bm 🤯",
-"Kan jeg komme på besøk serdar morra kveld klokken frem klokken ni kveld serdar 🏠"
-];
+  const show = this.checked;
 
-// 20 ekte adriansk quotes
-const adriansk = [
-"Flaminginio mayoneso de tomato el makoroni no onion 🌿",
-"HOla seniorita, much a gracias como estation 😎",
-"Monday rutine, drive to burger king, take a junior pack for the sister olololo 🍔",
-"!?!?! No firstein espanol, ima turkey bambino 😂",
-"Me fioleto de fishero no comprendo la policies, bigimoto royale inni minni hazan furunkulo 💀",
-"Nihso Mamao ma ublanca de kaka ne smotrit film Ladno 😵",
-"Mi amore espresso makiata makita por favour ☕",
-"Fenanilo caprisono pomodoro lovilo olololo Ola lo 🔮",
-"Ke ma veninero? olololoooo 🌌",
-"Yo me amore siempre con tu, olololo, fenanilo pomodoro caprisono lovilo bm 🤙",
-"Ma ceba can ay geto uwue 😭",
-"🌿 Me molto relaxino <small>(Jeg er veldig avslappet)</small>",
-"😌 Me senti soft vibra <small>(Jeg føler myke vibber)</small>",
-"🌌 Woah me trippi stilo <small>(Woah, jeg på trip-stemning)</small>",
-"🍫 Me gusta kakaolino <small>(Jeg liker kakaoen)</small>",
-"😂 Me faccia sorriso <small>(Ansiktet mitt smiler)</small>",
-"🌟 Me molto chillino, vibes grandioso bm 🔥",
-"RAAAR me trippi stilo, bigimoto 🫶",
-"Woah me svevaro alto, el yo ass 😵",
-"Me mucho felizo oggi, olololo vibes 💫",
-"💀 Me faccio lolz, fenanilo pomodoro caprisono lovilo bm hahahaha"
-];
+  document.getElementById('strengthSelect').style.display = show ? 'none' : 'block';
+  document.getElementById('strengthManual').style.display = show ? 'block' : 'none';
 
-      const r = Math.random();
-      if (r < 0.33) return serdarsk[Math.floor(Math.random() * serdarsk.length)];
-      if (r < 0.66) return adriansk[Math.floor(Math.random() * adriansk.length)];
-      return normal[Math.floor(Math.random() * normal.length)];
-    }
+  document.getElementById('milkSelect').style.display = show ? 'none' : 'block';
+  document.getElementById('milkManual').style.display = show ? 'block' : 'none';
 
-    function calculateTHC() {
-      const grams = parseFloat(document.getElementById('grams').value) || 0;
-      let strength = parseFloat(document.getElementById('strength').value);
-      const consistency = parseFloat(document.getElementById('consistency').value) || 1;
-      const milkFat = parseFloat(document.getElementById('milk').value) || 0.01;
-      const chocoFat = parseFloat(document.getElementById('chocoFat').value) || 0.309;
-      const useChocoButter = document.getElementById('useChocoButter').checked;
-      const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
+  document.getElementById('chocoFatSelect').style.display = show ? 'none' : 'block';
+  document.getElementById('chocoFatManual').style.display = show ? 'block' : 'none';
+});
 
-      if (strength === 0) strength = 0.15;
+function chooseQuote() {
+  const normal = [
+    "Bare kos deg, ikke stress – livet er kakao og fred ☕🌿",
+    "Chill, sett deg i sofaen, slå på litt musikk og smelt inn i universet 🎶",
+    "En kopp med ro, bror. Ikke mer, ikke mindre 😌",
+    "THC + kakao = kjærlighet med fett 🌈",
+    "Du er trygg, du er myk, du er varm – som sjokolade i panna 😴",
+    "Alt går sakte, men riktig. Akkurat som å røre i en gryte med kos 🍫",
+    "Livet er fett, literally, når du har helmelk i miksen 💪",
+    "Du blir ikke høy, du blir opplyst 🔥",
+    "Om du hører lyder i veggen – det er bare deg selv, bror 😳",
+    "Kakaoen smiler til deg nå. Smil tilbake 😌",
+    "Legg deg ned, bli en teppeburrito og bare lev 🥰",
+    "Ikke tenk for mye – bare flyt, du eier lufta nå 💨",
+    "Du er i slow motion nå, men verden følger ikke med 😂",
+    "Hvis du mister koppen, så var det skjebnen ☕💀",
+    "Alt er chill til du ser lyset danse på taket, da er du midt i sonen 🌌",
+    "Dette er ikke bare kakao, det er livsfilosofi i koppform 🤯",
+    "Du kjenner det ikke først, men plutselig – pang, kos 💚",
+    "Du smelter som smør i varm melk nå 😵",
+    "Ikke prøv å stå, bror. Sofaen vant kampen 🛋️",
+    "Kos, ro, varme, fred. THC sitt evangelium 😇"
+  ];
 
-      const totalTHC_raw = grams * strength * 1000;
-      const adjByConsistency = consistency;
+  return normal[Math.floor(Math.random() * normal.length)];
+}
 
-      let fatScore = milkFat * 100;
-      fatScore = fatScore * 0.6;
-      if (useChocoButter) fatScore += chocoFat * 100 * 0.9;
-      else fatScore += chocoFat * 100 * 0.45;
-      const fatMultiplier = 0.55 + fatScore / 100;
+function calculateTHC() {
 
-      const totalTHC_available = totalTHC_raw * adjByConsistency * fatMultiplier;
-      const thcPerCup = totalTHC_available / cups;
-      const percentOfRawPerCup = (thcPerCup / totalTHC_raw) * 100;
+  const grams = parseFloat(document.getElementById('grams').value) || 0;
+  const consistency = parseFloat(document.getElementById('consistency').value) || 1;
+  const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
+  const useChocoButter = document.getElementById('useChocoButter').checked;
+  const manual = document.getElementById('manualInput').checked;
 
-      let effect = '';
-      if (thcPerCup < 10) effect = 'Mild';
-      else if (thcPerCup < 30) effect = 'Middels';
-      else if (thcPerCup < 60) effect = 'Sterk';
-      else effect = 'Ekstrem';
+  let strength;
+  let milkFat;
+  let chocoFat;
 
-      const warnEl = document.getElementById('warn');
-      if (thcPerCup > 50) {
-        warnEl.style.display = 'block';
-        warnEl.innerHTML = '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp). Ta det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
-      } else warnEl.style.display = 'none';
+  if (manual) {
 
-      let baselineExtra = 3;
-      let extraTime = baselineExtra;
-      if (fatMultiplier < 0.9) extraTime += 3;
-      else if (fatMultiplier < 1.1) extraTime += 1;
-      else extraTime -= 0.5;
-      extraTime += Math.max(0, (cups - 1) * 0.6);
-      if (extraTime < 0.5) extraTime = 0.5;
+    strength = (parseFloat(document.getElementById('strengthManual').value) || 0) / 100;
+    milkFat  = (parseFloat(document.getElementById('milkManual').value) || 0) / 100;
+    chocoFat = (parseFloat(document.getElementById('chocoFatManual').value) || 0) / 100;
 
-      const quote = chooseQuote();
+  } else {
 
-      const out = document.getElementById('out');
-      out.innerHTML =
-        `<strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg` +
-        ` <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>` +
-        `<strong>Estimert effekt:</strong> ${effect}<br>` +
-        `<strong>Anbefalt ekstra varighet (konservativ, ikke-temperatur):</strong> ca ${extraTime.toFixed(1)} minutter ekstra for god fett-infusjon / oppløsning (justert etter melk & sjokofett).<br>` +
-        `<div style="margin-top:8px;"><em>${quote}</em></div>`;
+    strength = parseFloat(document.getElementById('strengthSelect').value);
+    milkFat  = parseFloat(document.getElementById('milkSelect').value) || 0.01;
+    chocoFat = parseFloat(document.getElementById('chocoFatSelect').value) || 0.309;
 
-      const meta = document.getElementById('metaSources');
-      meta.innerHTML = 'Kilder: forskning som beskriver at THC er fettløselig og at varme aktiverer THCA → THC (se publikasjoner fra NCBI/PMC, CDC, og gjennomgangsartikler).';
-    }
-  </script>
+  }
+
+  if (strength === 0) strength = 0.15;
+
+  const totalTHC_raw = grams * strength * 1000;
+
+  let fatScore = milkFat * 100;
+  fatScore = fatScore * 0.6;
+
+  if (useChocoButter) fatScore += chocoFat * 100 * 0.9;
+  else fatScore += chocoFat * 100 * 0.45;
+
+  const fatMultiplier = 0.55 + fatScore / 100;
+
+  const totalTHC_available = totalTHC_raw * consistency * fatMultiplier;
+  const thcPerCup = totalTHC_available / cups;
+  const percentOfRawPerCup = totalTHC_raw > 0
+    ? (thcPerCup / totalTHC_raw) * 100
+    : 0;
+
+  let effect = '';
+  if (thcPerCup < 10) effect = 'Mild';
+  else if (thcPerCup < 30) effect = 'Middels';
+  else if (thcPerCup < 60) effect = 'Sterk';
+  else effect = 'Ekstrem';
+
+  const warnEl = document.getElementById('warn');
+
+  if (thcPerCup > 50) {
+    warnEl.style.display = 'block';
+    warnEl.innerHTML =
+      '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp). Ta det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
+  } else {
+    warnEl.style.display = 'none';
+  }
+
+  let baselineExtra = 3;
+  let extraTime = baselineExtra;
+
+  if (fatMultiplier < 0.9) extraTime += 3;
+  else if (fatMultiplier < 1.1) extraTime += 1;
+  else extraTime -= 0.5;
+
+  extraTime += Math.max(0, (cups - 1) * 0.6);
+
+  if (extraTime < 0.5) extraTime = 0.5;
+
+  const quote = chooseQuote();
+
+  const out = document.getElementById('out');
+  out.innerHTML =
+    `<strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg` +
+    ` <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>` +
+    `<strong>Estimert effekt:</strong> ${effect}<br>` +
+    `<strong>Anbefalt ekstra varighet (konservativ, ikke-temperatur):</strong> ca ${extraTime.toFixed(1)} minutter ekstra for god fett-infusjon / oppløsning.<br>` +
+    `<div style="margin-top:8px;"><em>${quote}</em></div>`;
+
+  const meta = document.getElementById('metaSources');
+  meta.innerHTML = 'Kilder: THC er fettløselig og varme aktiverer THCA → THC (NCBI/PMC, oversiktsartikler).';
+}
+</script>
+
 </body>
 </html>
