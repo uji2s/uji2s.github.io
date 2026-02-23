@@ -1,4 +1,9 @@
 ﻿### Changed
+- [23-02-2026] feat: wf v1
+- [23-02-2026] feat: mass import
+- [18-02-2026] feat: manual input
+- [04-01-2026] feat: full inline calculator
+- [04-01-2026] feat: teller
 - [19-12-2025] upd
 - [19-12-2025] Revert "upd"
 - [27-10-2025] kakaotest
@@ -31,8 +36,16 @@
 - [02-09-2025] final v1
 
 ### Fixed
+- [23-02-2026] fix: wf fixes
+- [23-02-2026] fix: wf v2
+- [23-02-2026] fix: default board
+- [23-02-2026] fix: autoload wf
+- [04-01-2026] fix: dagens saldo date sorting
+- [04-01-2026] fix: dagens dato + inline kalk
+- [04-01-2026] fix: date sorting, inline calc, fixups
 - [19-12-2025] fix: base64 phone fix
 - [19-12-2025] fix: inline date editing auto adjustment
+- [19-12-2025] fix: changelog UTF8 gen
 - [28-09-2025] fix: phone friendly base64
 - [27-09-2025] fix: sorting
 - [24-09-2025] fix: inline editing will no longer set todays date when editing except on "dagens saldo"
