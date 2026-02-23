@@ -161,9 +161,16 @@ function canBuild(word,counts){
 /* ===== UI ===== */
 function bindUI(){
     const rackInput=document.getElementById("rackInput");
-    rackInput.oninput=e=>{boards[current].rack=e.target.value.toUpperCase();save();updateSuggestions();};
+    rackInput.oninput=e=>{
+        boards[current].rack=e.target.value.toUpperCase();
+        save();
+        updateSuggestions();
+    };
 
-    document.getElementById("newBoardBtn").onclick=saveCurrentBoard;
+    // lagre knapp
+    document.getElementById("newBoardBtn").textContent = "Lagre";
+    document.getElementById("newBoardBtn").onclick = saveCurrentBoard;
+
     document.getElementById("loadDefaultBtn").onclick=loadDefaultBoard;
     document.getElementById("deleteBoardBtn").onclick=deleteBoard;
     document.getElementById("duplicateBoardBtn").onclick=duplicateBoard;
@@ -172,18 +179,25 @@ function bindUI(){
     document.getElementById("boardSelect").onchange=e=>switchBoard(e.target.value);
 }
 
-/* ===== BOARD MANIPULATION ===== */
 function saveCurrentBoard(){
-    const name=document.getElementById("boardNameInput").value.trim();
-    if(!name) return;
+    if(!current) return;
+    const name = document.getElementById("boardNameInput").value.trim() || current;
 
-    if(boards[name] && !confirm(`Brett "${name}" finnes allerede. Overwrite?`)) return;
+    if(boards[name] && name!==current && !confirm(`Brett "${name}" finnes allerede. Overwrite?`)) return;
 
-    boards[name]={grid:boards[name]?.grid||emptyGrid(),rack:boards[name]?.rack||""};
+    boards[name] = {grid: JSON.parse(JSON.stringify(boards[current].grid)), rack: boards[current].rack};
     save();
     updateSelect();
     switchBoard(name);
     document.getElementById("boardNameInput").value="";
+    alert(`Brett "${name}" lagret!`);
+}
+
+// oppdatert displayValue for farger i bonus-ruter
+function displayValue(cell){
+    if(cell.letter) return cell.letter; // bokstav vises alene
+    if(cell.bonus && cell.bonus!=="none") return cell.bonus.toUpperCase(); // TW/DW osv vises hvis tom
+    return "";
 }
 
 function loadDefaultBoard(){

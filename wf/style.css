@@ -61,11 +61,10 @@ body{
     background: #333;
 }
 
-/* bonusfarger */
-.bonus-dl { background:#1e6bff; }
-.bonus-tl { background:#0047cc; } 
-.bonus-dw { background:#ff9500; }
-.bonus-tw { background:#d40000; } 
+.bonus-dl { background:#00cc44; }  /* lys grønn */
+.bonus-tl { background:#0047cc; }  /* mørk blå */
+.bonus-dw { background:#ff9500; }  /* oransje */
+.bonus-tw { background:#d40000; }  /* rød */
 
 /* inputs/knapper layout */
 .inputs {
