@@ -55,17 +55,17 @@
     }
 
     /* FIXED Manual Input checkbox centering */
-    .checkbox-inline {
-  margin-top: 10px;
+    /* iOS: sentrer checkbox i checkbox-inline */
+.checkbox-inline {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
 
-.checkbox-inline label {
-  cursor: pointer;
-  margin: 0;
+.checkbox-inline input[type="checkbox"] {
+  margin: 0;       /* fjerner uønsket margin */
+  width: auto;     /* ikke stretch til 100% */
 }
 
     button {
