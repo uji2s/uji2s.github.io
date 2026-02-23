@@ -26,13 +26,21 @@ const DEFAULT_BOARD = [
 ].map(r=>r.map(b=>({letter:"", bonus:b||"none"})));
 
 /* ===== INIT ===== */
-document.addEventListener("DOMContentLoaded", async ()=>{
+function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(boards));
+    localStorage.setItem("lastBoard", current);
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
     await loadDictionary();
     loadBoards();
+    updateSelect();
     bindUI();
 
-    if(!Object.keys(boards).length) createBoard("Standard");
-    else switchBoard(Object.keys(boards)[0]);
+    const last = localStorage.getItem("lastBoard");
+    if(last && boards[last]) switchBoard(last);
+    else if(Object.keys(boards).length) switchBoard(Object.keys(boards)[0]);
+    else createBoard("Standard");
 
     renderGuide();
 });
