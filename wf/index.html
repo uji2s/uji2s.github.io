@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>wf</title>
+    <title>uji2s - wf</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -18,10 +18,16 @@
         <input id="rackInput" type="text" placeholder="Rack (A–Å, ?)">
         <input id="boardNameInput" type="text" placeholder="Nytt brett">
         <button id="newBoardBtn">Nytt</button>
+        <button id="loadDefaultBtn">Load Default</button>
+        <button id="deleteBoardBtn">Delete</button>
+        <button id="duplicateBoardBtn">Duplicate</button>
+        <button id="renameBoardBtn">Rename</button>
         <select id="boardSelect"></select>
     </div>
 
-    <table id="board"></table>
+    <div id="boardWrapper">
+        <table id="board"></table>
+    </div>
 
     <h3>Forslag</h3>
     <div id="suggestions"></div>
