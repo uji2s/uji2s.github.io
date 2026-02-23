@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>wf</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>wordfeud moment</h1>
+        <div id="dateInfo">local · offline · no backend</div>
+    </header>
+
+    <div class="inputs">
+        <input id="rackInput" type="text" placeholder="Rack (A–Å, ?)">
+        <input id="boardNameInput" type="text" placeholder="Nytt brett">
+        <button id="newBoardBtn">Nytt</button>
+        <select id="boardSelect"></select>
+    </div>
+
+    <table id="board"></table>
+
+    <h3>Forslag</h3>
+    <div id="suggestions"></div>
+
+    <details style="margin-top:15px;text-align:left;">
+        <summary>Guide</summary>
+        <div id="guide"></div>
+    </details>
+
+    <div id="footer">(c) uji 2026</div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
