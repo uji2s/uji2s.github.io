@@ -773,7 +773,97 @@ function setupBase64Buttons() {
 setupBase64Buttons();
 window.addEventListener("resize", setupBase64Buttons);
 
+// --- Mass import fra CSV-format (navn,sum,dato) ---
+function massImportCSV() {
+    let input;
+    if(window.innerWidth <= 768){ // mobil
+        const ta = document.createElement("textarea");
+        ta.placeholder = "Lim inn liste her: navn,sum,dato (f.eks. maximat,-141,0403)";
+        ta.style.width="90%";
+        ta.style.height="150px";
+        ta.style.display="block";
+        ta.style.margin="10px auto";
+        document.body.appendChild(ta);
+        ta.focus();
 
+        const btn = document.createElement("button");
+        btn.textContent="Importer";
+        btn.style.display="block";
+        btn.style.margin="10px auto";
+        document.body.appendChild(btn);
+
+        btn.addEventListener("click", ()=>{
+            input = ta.value.trim();
+            ta.remove();
+            btn.remove();
+            if(!input) return;
+            tryMassImport(input);
+        });
+
+    } else { // desktop
+        input = prompt("Skriv inn: navn, sum, og dato (f.eks. maximat,-141,0403)\nÉn entry per linje\nHusk 0 i måned! 0101 blir 1. Jan");
+        if(!input) return;
+        tryMassImport(input);
+    }
+
+    function tryMassImport(str){
+        try{
+            const lines = str.split(/\r?\n/).filter(l=>l.trim()!=="");
+            const currentYear = new Date().getFullYear();
+
+            lines.forEach(line=>{
+                const parts = line.split(",");
+                if(parts.length < 3) return; // hopp over ugyldige linjer
+
+                const name = parts[0].trim();
+                let amount = parseFloat(parts[1].trim());
+                if(isNaN(amount)) amount = 0;
+
+                const dateStr = parts[2].trim();
+                let day = parseInt(dateStr.slice(0,2),10);
+                let month = parseInt(dateStr.slice(2,4),10)-1; // JS months 0-11
+                if(isNaN(day)||isNaN(month)) {
+                    day = new Date().getDate();
+                    month = new Date().getMonth();
+                }
+                const date = new Date(currentYear, month, day);
+
+                addEntry(name, amount, date);
+            });
+
+            renderEntries();
+            updateSluttsum();
+            updateDetailedView();
+            //alert("Mass import fullført! " + lines.length + " linjer lagt til.");
+
+        } catch(err){
+            console.error(err);
+            alert("Noe gikk galt under importen, sjekk formatet (navn,sum,dato).");
+        }
+    }
+}
+
+// --- Legg til knapp for mass import ---
+function setupMassImportButton() {
+    if(document.getElementById("massImportBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "massImportBtn";
+    btn.textContent = "klarna moment";
+    btn.style.marginLeft="10px";
+    btn.addEventListener("click", massImportCSV);
+
+    const existingExportBtn = document.getElementById("exportBtn");
+    if(existingExportBtn){
+        existingExportBtn.insertAdjacentElement('afterend', btn);
+    } else {
+        tableEl?.parentElement?.insertBefore(btn, tableEl);
+    }
+}
+
+// --- Init mass import knapp ---
+setupMassImportButton();
+window.addEventListener("resize", setupMassImportButton);
 
 // --- Init ---
 renderEntries();
