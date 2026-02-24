@@ -62,7 +62,12 @@ small, .meta {
   width: 40px;
   height: 40px;
   object-fit: contain;
+}
+.weed {
   animation: floatWeed 3s ease-in-out infinite alternate;
+}
+.weed-right {
+  animation: floatWeedRight 3s ease-in-out infinite alternate;
 }
 
 /* subtle float */
@@ -70,6 +75,11 @@ small, .meta {
   0%   { transform: translateY(0) rotate(0deg); }
   50%  { transform: translateY(-5px) rotate(-8deg); }
   100% { transform: translateY(0) rotate(8deg); }
+}
+@keyframes floatWeedRight {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
 }
 
 /* ===== INPUTS ===== */
@@ -163,6 +173,7 @@ button:hover { background: #555; }
 
 /* BASE: svak hvit glow ALLTID */
 .weed,
+.weed-right,
 .quote-weed {
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.35));
   transition: transform 0.4s ease, filter 0.4s ease;
@@ -197,7 +208,7 @@ button:hover { background: #555; }
     <div class="title-wrapper">
       <img src="weed.webp" class="weed" alt="weed left">
       <h1>Skækkulator</h1>
-      <img src="weed.webp" class="weed" alt="weed right">
+      <img src="weed.webp" class="weed-right" alt="weed right">
     </div>
 
     <div class="checkbox-inline">
@@ -389,7 +400,7 @@ function calculateTHC() {
   if (thcPerCup > 50) {
     warnEl.style.display = 'block';
     warnEl.innerHTML =
-      '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp). Ta det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
+      '⚠️ Advarsel: Høy dose (over 50 mg THC per kopp).\nTa det rolig, start med en liten mengde, ha vann og snacks tilgjengelig — og kos deg.';
   } else {
     warnEl.style.display = 'none';
   }
@@ -409,7 +420,7 @@ document.getElementById('result').style.display = 'block';
   `;
 
   // === PURPLE HAZE MODE ===
-document.querySelectorAll('.weed, .quote-weed').forEach(el => {
+document.querySelectorAll('.weed, .weed-right, .quote-weed').forEach(el => {
   el.classList.remove('weed-overdose');
   if (thcPerCup >= 200) {
     el.classList.add('weed-overdose');
