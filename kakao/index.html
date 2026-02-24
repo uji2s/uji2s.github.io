@@ -5,138 +5,200 @@
   <title>Skækkulator — THC-kakao</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 780px;
-      margin: 20px auto;
-      background: #fbfbfb;
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-    }
+/* ===== BODY ===== */
+body {
+  font-family: Arial, sans-serif;
+  max-width: 780px;
+  margin: 20px auto;
+  background: #222;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  color: #eee;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+}
 
-    h1 {
-      text-align: center;
-      margin-bottom: 4px;
-    }
+/* ===== TEXT ===== */
+p.lead {
+  text-align: center;
+  color: #bbb;
+  margin: 0 0 12px;
+  font-size: 14px;
+}
 
-    p.lead {
-      text-align: center;
-      color: #444;
-      margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 14px;
-    }
+label {
+  display: block;
+  margin-top: 12px;
+  font-weight: 600;
+  color: #ddd;
+}
 
-    label {
-      display: block;
-      margin-top: 12px;
-      font-weight: 600;
-      color: #222;
-    }
+small, .meta {
+  color: #aaa;
+  font-size: 13px;
+  margin-top: 6px;
+}
 
-    input, select {
-      margin-top: 6px;
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
+/* ===== TITLE + WEED ===== */
+.title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
 
-    .row {
-      display: flex;
-      gap: 12px;
-    }
+.title-wrapper h1 {
+  margin: 0;
+  font-size: 1.8em;
+  color: #eee;
+}
 
-    .col {
-      flex: 1;
-    }
+.title-wrapper img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  animation: floatWeed 3s ease-in-out infinite alternate;
+}
 
-    /* FIXED Manual Input checkbox centering */
-    /* iOS: sentrer checkbox i checkbox-inline */
+/* subtle float */
+@keyframes floatWeed {
+  0%   { transform: translateY(0) rotate(0deg); }
+  50%  { transform: translateY(-5px) rotate(-8deg); }
+  100% { transform: translateY(0) rotate(8deg); }
+}
+
+/* ===== INPUTS ===== */
+input, select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #111;
+  color: #eee;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+input::placeholder { color: #777; }
+
+/* ===== LAYOUT ===== */
+.row { display: flex; gap: 12px; }
+.col { flex: 1; }
+
 .checkbox-inline {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
+.checkbox-inline input { margin: 0; width: auto; }
 
-.checkbox-inline input[type="checkbox"] {
-  margin: 0;       /* fjerner uønsket margin */
-  width: auto;     /* ikke stretch til 100% */
+/* ===== BUTTONS ===== */
+button {
+  margin-top: 16px;
+  padding: 12px;
+  width: 100%;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 0;
+  background: #444;
+  color: #fff;
+  cursor: pointer;
+}
+button:hover { background: #555; }
+
+/* ===== FORCE REFRESH ===== */
+#forceRefreshBtn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 12px;
+  width: 16px;
+  height: 16px;
+  min-width: 36px;
+  min-height: 36px;
+  max-width: 90vw;
+  max-height: 90vw;
+  padding: 0;
+  font-size: 12px;
+  background: #555;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  box-sizing: border-box;
+  user-select: none;
+}
+#forceRefreshBtn:hover { background: #666; }
+
+/* ===== RESULT ===== */
+#result {
+  display: none;
+  margin-top: 18px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #1c1c1c;
+  border: 1px solid #333;
 }
 
-    button {
-      margin-top: 16px;
-      padding: 12px;
-      width: 100%;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 0;
-      background: #2b9aef;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    #result {
-      margin-top: 18px;
-      padding: 12px;
-      border-radius: 8px;
-      background: #fff;
-      border: 1px solid #eee;
-    }
-
-    .warn {
-      background: #fff7e6;
-      border: 1px solid #ffd08a;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      color: #7a4b00;
-      display: none;
-    }
-
-    .note {
-      font-size: 13px;
-      color: #555;
-      margin-top: 8px;
-    }
-
-    small {
-      color: #666;
-      display: block;
-      margin-top: 6px;
-    }
-
-    .meta {
-      font-size: 13px;
-      color: #666;
-      margin-top: 8px;
-    }
-
-    /* FIXED Force Refresh knapp */
-    #forceRefreshBtn {
-      margin-top: 10px;
-      background: #555;
-      color: #fff;
-      border-radius: 6px;
-      padding: 10px;
-      cursor: pointer;
-    }
-
-    #forceRefreshBtn:hover {
-      background: #666;
-    }
-    body {
-  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+.warn {
+  display: none;
+  background: #2a1d00;
+  border: 1px solid #8a5a00;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  color: #ffcc80;
 }
-  </style>
+
+/* =========================================================
+   🌿 WEED EFFECTS (REN, KORREKT, INGEN DUPLIKATER)
+   ========================================================= */
+
+/* BASE: svak hvit glow ALLTID */
+.weed,
+.quote-weed {
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.35));
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+
+/* quote weed size */
+.quote-weed {
+  width: 18px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* 💜 PURPLE HAZE MODE >200mg */
+.weed-overdose {
+  filter:
+    drop-shadow(0 0 6px rgba(180,120,255,0.9))
+    drop-shadow(0 0 14px rgba(140,60,255,0.8))
+    drop-shadow(0 0 26px rgba(90,0,180,0.6));
+  animation: purplePulse 2.2s ease-in-out infinite;
+}
+
+@keyframes purplePulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+</style>
 </head>
 <body>
-  <h1>Skækkulator — THC-kakao</h1>
-  <p class="lead">Raskt estimat av THC per kopp med fett-justering, advarsel ved høy dose, og litt koselig tekst 🎶</p>
+
+
+  <div id="forceRefreshBtn" onclick="forceRefresh()">⟳</div>
+
+  <div class="title-wrapper">
+<img src="weed.webp" class="weed" alt="weed left">
+    <h1>Skækkulator</h1>
+<img src="weed.webp" class="weed" alt="weed right">
+  </div>
+
+
 
   <div class="checkbox-inline">
     <label for="manualInput">Manual input</label>
@@ -227,6 +289,7 @@
   <label>Antall kopper (fordeling):</label>
   <input id="cups" type="number" min="1" step="1" value="1">
 
+
   <button onclick="calculateTHC()">Regn THC per kopp</button>
 
   <div id="result">
@@ -251,34 +314,36 @@ document.getElementById('manualInput').addEventListener('change', function () {
 });
 
 function chooseQuote() {
-  const normal = [
-    "Bare kos deg, ikke stress – livet er kakao og fred ☕🌿",
-    "Chill, sett deg i sofaen, slå på litt musikk og smelt inn i universet 🎶",
-    "En kopp med ro, bror. Ikke mer, ikke mindre 😌",
-    "THC + kakao = kjærlighet med fett 🌈",
-    "Du er trygg, du er myk, du er varm – som sjokolade i panna 😴",
-    "Alt går sakte, men riktig. Akkurat som å røre i en gryte med kos 🍫",
-    "Livet er fett, literally, når du har helmelk i miksen 💪",
-    "Du blir ikke høy, du blir opplyst 🔥",
-    "Om du hører lyder i veggen – det er bare deg selv, bror 😳",
-    "Kakaoen smiler til deg nå. Smil tilbake 😌",
-    "Legg deg ned, bli en teppeburrito og bare lev 🥰",
-    "Ikke tenk for mye – bare flyt, du eier lufta nå 💨",
-    "Du er i slow motion nå, men verden følger ikke med 😂",
-    "Hvis du mister koppen, så var det skjebnen ☕💀",
-    "Alt er chill til du ser lyset danse på taket, da er du midt i sonen 🌌",
-    "Dette er ikke bare kakao, det er livsfilosofi i koppform 🤯",
-    "Du kjenner det ikke først, men plutselig – pang, kos 💚",
-    "Du smelter som smør i varm melk nå 😵",
-    "Ikke prøv å stå, bror. Sofaen vant kampen 🛋️",
-    "Kos, ro, varme, fred. THC sitt evangelium 😇"
+  const quotes = [
+    "Bare kos deg a, ikke stress – livet er bare kakao og fred wallah ☕🌿",
+    "Chill litt brur, sett deg i sofaen, spill noe musikk og smelt inn i universet 🎶",
+    "En kopp med ro wallah, ikke mer ikke mindre 😌",
+    "THC + kakao = kjærlighet med fett bror 🌈",
+    "Du er trygg, du er myk, du er varm – som sjokolade i panna wallah 😴",
+    "Alt går sakte nå, men riktig ass 🍫",
+    "Livet er fett, literally brur 💪",
+    "Du blir ikke høy, du blir opplyst wallah 🔥",
+    "Sofaen vant kampen bror, gi opp 🛋️",
+    "Teppelivet er valgt ass, wallah 🫠",
+    "Universet nikker tilbake til deg brur 🌌",
+    "Ikke stress nå, wallah du dør ikke, bare chill 😭",
+    "Wallah du dør brur… neida, bare kos 😂🌿"
   ];
 
-  return normal[Math.floor(Math.random() * normal.length)];
+  let q = quotes[Math.floor(Math.random() * quotes.length)];
+
+  // 40% sjanse: bytt ALLE emojis med weed.webp
+  if (Math.random() < 0.4) {
+    q = q.replace(
+    /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu,
+    '<img src="weed.webp" class="quote-weed weed">'
+  );
+  }
+
+  return q;
 }
 
 function calculateTHC() {
-
   const grams = parseFloat(document.getElementById('grams').value) || 0;
   const consistency = parseFloat(document.getElementById('consistency').value) || 1;
   const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
@@ -290,17 +355,13 @@ function calculateTHC() {
   let chocoFat;
 
   if (manual) {
-
     strength = (parseFloat(document.getElementById('strengthManual').value) || 0) / 100;
     milkFat  = (parseFloat(document.getElementById('milkManual').value) || 0) / 100;
     chocoFat = (parseFloat(document.getElementById('chocoFatManual').value) || 0) / 100;
-
   } else {
-
     strength = parseFloat(document.getElementById('strengthSelect').value);
     milkFat  = parseFloat(document.getElementById('milkSelect').value) || 0.01;
     chocoFat = parseFloat(document.getElementById('chocoFatSelect').value) || 0.309;
-
   }
 
   if (strength === 0) strength = 0.15;
@@ -337,33 +398,30 @@ function calculateTHC() {
     warnEl.style.display = 'none';
   }
 
-  // --- REAL INFUSION LOGIC ---
-
-const thcLoad = grams * strength * 1000;
-
-const effectiveFat =
-  (milkFat * 100 * 0.6) +
-  (chocoFat * 100 * (useChocoButter ? 0.9 : 0.45));
-
-const thcPerFatUnit = thcLoad / Math.max(1, effectiveFat);
-
-let extraTime;
-
-if (thcPerFatUnit < 4) extraTime = 2;
-else if (thcPerFatUnit < 8) extraTime = 4;
-else if (thcPerFatUnit < 14) extraTime = 7;
-else if (thcPerFatUnit < 20) extraTime = 11;
-else extraTime = 16;
-
   const quote = chooseQuote();
 
-  const out = document.getElementById('out');
-  out.innerHTML =
-    `<strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg` +
-    ` <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>` +
-    `<strong>Estimert effekt:</strong> ${effect}<br>` +
-    `<strong>Anbefalt ekstra varighet:</strong> ca ${extraTime.toFixed(0)} minutter ekstra for best infusjon.<br>` +
-    `<div style="margin-top:8px;"><em>${quote}</em></div>`;
+document.getElementById('result').style.display = 'block';
+
+
+  // --- bare oppdater innhold, ikke append ny div ---
+  out.innerHTML = `
+    <strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg
+    <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>
+    <strong>Estimert effekt:</strong> ${effect}<br>
+    <strong>Anbefalt ekstra varighet:</strong> ca ${Math.round((grams * strength * 1000) / fatMultiplier)} minutter ekstra for best infusjon.<br>
+    <div style="margin-top:8px;"><em>${quote}</em></div>
+  `;
+
+  // === PURPLE HAZE MODE ===
+document.querySelectorAll('.weed, .quote-weed').forEach(el => {
+  el.classList.remove('weed-overdose');
+  if (thcPerCup >= 200) {
+    el.classList.add('weed-overdose');
+  }
+});
+
+  // vis result (kun én boks)
+  document.getElementById('result').style.display = 'block';
 
   const meta = document.getElementById('metaSources');
   meta.innerHTML = 'Kilder: THC er fettløselig og varme aktiverer THCA → THC (NCBI/PMC, oversiktsartikler).';
@@ -376,8 +434,6 @@ function forceRefresh() {
   window.location.href = url.toString();
 }
 </script>
-
-<button onclick="forceRefresh()">Force refresh</button>
 
 </body>
 </html>
