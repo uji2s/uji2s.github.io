@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="no">
-<head>
-  <meta charset="utf-8">
-  <title>Skækkulator — THC-kakao</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
+  <head>
+    <meta charset="utf-8">
+    <title>Skækkulator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
 /* ===== BODY ===== */
 body {
   font-family: Arial, sans-serif;
@@ -185,120 +185,106 @@ button:hover { background: #555; }
   50%  { transform: scale(1.3); }
   100% { transform: scale(1); }
 }
-</style>
-</head>
-<body>
+    </style>
+  </head>
+  <body>
+    <div id="forceRefreshBtn" onclick="forceRefresh()">⟳</div>
 
-
-  <div id="forceRefreshBtn" onclick="forceRefresh()">⟳</div>
-
-  <div class="title-wrapper">
-<img src="weed.webp" class="weed" alt="weed left">
-    <h1>Skækkulator</h1>
-<img src="weed.webp" class="weed" alt="weed right">
-  </div>
-
-
-
-  <div class="checkbox-inline">
-    <label for="manualInput">Manual input</label>
-    <input id="manualInput" type="checkbox">
-  </div>
-
-
-  <label>Gram hasj:</label>
-  <input id="grams" type="number" min="0" step="0.01" value="1">
-
-  <label>Styrke på hasj:</label>
-
-  <select id="strengthSelect">
-    <option value="0.10">Svak (~10% THC)</option>
-    <option value="0.15">Middels (~15% THC)</option>
-    <option value="0.20">Sterk (~20% THC)</option>
-    <option value="0.25">Ekstra sterk (~25% THC)</option>
-    <option value="0.4">Psykopat (~40% THC)</option>
-    <option value="0">Ukjent (bruk gjennomsnitt 15%)</option>
-  </select>
-
-  <input
-    id="strengthManual"
-    type="number"
-    min="0"
-    max="100"
-    step="0.1"
-    placeholder="THC %"
-    style="display:none;">
-
-  <label>Konsistens:</label>
-  <select id="consistency">
-    <option value="0.92">Tørr / lys</option>
-    <option value="1">Mellom</option>
-    <option value="1.08">Oljete / mørk</option>
-    <option value="1">Ukjent</option>
-  </select>
-
-  <div class="row">
-    <div class="col">
-      <label>Type melk:</label>
-
-      <select id="milkSelect">
-        <option value="0.005">Ekstra lett (0.5% fett)</option>
-        <option value="0.01">Lett (1.0% fett)</option>
-        <option value="0.0225">Lett + Hel (2.25% fett)</option>
-        <option value="0.02">Ekstra + Hel (2.0% fett)</option>
-        <option value="0.035">Helmelk (3.5% fett)</option>
-      </select>
-
-      <input
-        id="milkManual"
-        type="number"
-        min="0"
-        step="0.1"
-        placeholder="Fett % melk"
-        style="display:none;">
-
-      <small>Velg den melketypen du bruker — fett øker hvor mye THC som løses i blandingen.</small>
+    <div class="title-wrapper">
+      <img src="weed.webp" class="weed" alt="weed left">
+      <h1>Skækkulator</h1>
+      <img src="weed.webp" class="weed" alt="weed right">
     </div>
 
-    <div class="col">
-      <label>Sjokopålegg:</label>
-
-      <select id="chocoFatSelect">
-        <option value="0.309">Nutella (30.9%)</option>
-        <option value="0.36">Coop Extra (36.0%)</option>
-        <option value="0.365">First Price (36.5%)</option>
-      </select>
-
-      <input
-        id="chocoFatManual"
-        type="number"
-        min="0"
-        step="0.1"
-        placeholder="Fett % sjokopålegg"
-        style="display:none;">
-
-      <small>Dette representerer fettandelen i sjokopålegget — høyere fett betyr mer effektiv løsing av THC i fettfase.</small>
+    <div class="checkbox-inline">
+      <label for="manualInput">Manual input</label>
+      <input id="manualInput" type="checkbox">
     </div>
-  </div>
 
-  <div class="checkbox-inline">
-    <label for="useChocoButter">Sjokosmør?</label>
-    <input id="useChocoButter" type="checkbox" checked>
-  </div>
+    <label>Gram hasj:</label>
+    <input id="grams" type="number" min="0" step="0.01" value="1">
 
-  <label>Antall kopper (fordeling):</label>
-  <input id="cups" type="number" min="1" step="1" value="1">
+    <label>Styrke på hasj:</label>
+    <select id="strengthSelect">
+      <option value="0.10">Svak (~10% THC)</option>
+      <option value="0.15">Middels (~15% THC)</option>
+      <option value="0.20">Sterk (~20% THC)</option>
+      <option value="0.25">Ekstra sterk (~25% THC)</option>
+      <option value="0.4">Psykopat (~40% THC)</option>
+      <option value="0">Ukjent (bruk gjennomsnitt 15%)</option>
+    </select>
 
+    <input
+      id="strengthManual"
+      type="number"
+      min="0"
+      max="100"
+      step="0.1"
+      placeholder="THC %"
+      style="display:none;">
 
-  <button onclick="calculateTHC()">Regn THC per kopp</button>
+    <label>Konsistens:</label>
+    <select id="consistency">
+      <option value="0.92">Tørr / lys</option>
+      <option value="1">Mellom</option>
+      <option value="1.08">Oljete / mørk</option>
+      <option value="1">Ukjent</option>
+    </select>
 
-  <div id="result">
-    <div id="warn" class="warn"></div>
-    <div id="out"></div>
-    <div class="meta" id="metaSources"></div>
-  </div>
+    <div class="row">
+      <div class="col">
+        <label>Type melk:</label>
+        <select id="milkSelect">
+          <option value="0.005">Ekstra lett (0.5% fett)</option>
+          <option value="0.01">Lett (1.0% fett)</option>
+          <option value="0.0225">Lett + Hel (2.25% fett)</option>
+          <option value="0.02">Ekstra + Hel (2.0% fett)</option>
+          <option value="0.035">Helmelk (3.5% fett)</option>
+        </select>
+        <input
+          id="milkManual"
+          type="number"
+          min="0"
+          step="0.1"
+          placeholder="Fett % melk"
+          style="display:none;">
+        <small>Velg den melketypen du bruker — fett øker hvor mye THC som løses i blandingen.</small>
+      </div>
+      <div class="col">
+        <label>Sjokopålegg:</label>
+        <select id="chocoFatSelect">
+          <option value="0.309">Nutella (30.9%)</option>
+          <option value="0.36">Coop Extra (36.0%)</option>
+          <option value="0.365">First Price (36.5%)</option>
+        </select>
+        <input
+          id="chocoFatManual"
+          type="number"
+          min="0"
+          step="0.1"
+          placeholder="Fett % sjokopålegg"
+          style="display:none;">
+        <small>Dette representerer fettandelen i sjokopålegget — høyere fett betyr mer effektiv løsing av THC i fettfase.</small>
+      </div>
+    </div>
 
-<script>
+    <div class="checkbox-inline">
+      <label for="useChocoButter">Sjokosmør?</label>
+      <input id="useChocoButter" type="checkbox" checked>
+    </div>
+
+    <label>Antall kopper (fordeling):</label>
+    <input id="cups" type="number" min="1" step="1" value="1">
+
+    <button onclick="calculateTHC()">Regn THC per kopp</button>
+
+    <div id="result">
+      <div id="warn" class="warn"></div>
+      <div id="out"></div>
+      <div class="meta" id="metaSources"></div>
+    </div>
+
+    <script>
 document.getElementById('manualInput').addEventListener('change', function () {
 
   const show = this.checked;
