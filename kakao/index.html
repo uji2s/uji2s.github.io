@@ -136,7 +136,7 @@ button:hover { background: #555; }
   max-width: 90vw;
   max-height: 90vw;
   padding: 0;
-  font-size: 12px;
+  font-size: 14px;
   background: #555;
   color: #fff;
   border-radius: 8px;
@@ -405,19 +405,57 @@ function calculateTHC() {
     warnEl.style.display = 'none';
   }
 
+    // --- REAL INFUSION LOGIC (V1+) ---
+    const thcLoad = grams * strength * 1000;
+
+    // effektiv fettkapasitet (samme logikk som resten av kalkulatoren)
+    const effectiveFat =
+      (milkFat * 100 * 0.6) +
+      (chocoFat * 100 * (useChocoButter ? 0.9 : 0.45));
+
+    // sikkerhet mot null / tull
+    const safeFat = Math.max(1, effectiveFat);
+
+    // hvor hardt THC belaster fettet
+    const thcPerFatUnit = thcLoad / safeFat;
+
+    let extraTime;
+
+    if (thcPerFatUnit < 3) {
+      extraTime = 2;
+    } else if (thcPerFatUnit < 6) {
+      extraTime = 4;
+    } else if (thcPerFatUnit < 10) {
+      extraTime = 6;
+    } else if (thcPerFatUnit < 15) {
+      extraTime = 9;
+    } else if (thcPerFatUnit < 22) {
+      extraTime = 12;
+    } else {
+      extraTime = 15;
+    }
+
+    // små justeringer basert på konsistens
+    if (consistency > 1) extraTime -= 1;
+    if (consistency < 1) extraTime += 1;
+
+    // caps så det aldri blir idiotisk
+    extraTime = Math.min(20, Math.max(2, Math.round(extraTime)));
+
   const quote = chooseQuote();
 
 document.getElementById('result').style.display = 'block';
 
 
   // --- bare oppdater innhold, ikke append ny div ---
-  out.innerHTML = `
-    <strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg
-    <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>
-    <strong>Estimert effekt:</strong> ${effect}<br>
-    <strong>Anbefalt ekstra varighet:</strong> ca ${Math.round((grams * strength * 1000) / fatMultiplier)} minutter ekstra for best infusjon.<br>
-    <div style="margin-top:8px;"><em>${quote}</em></div>
-  `;
+    out.innerHTML = `
+      <strong>Omtrentlig THC per kopp:</strong> ${thcPerCup.toFixed(1)} mg<br>
+      <small>(${percentOfRawPerCup.toFixed(1)}% av rå-THC per kopp)</small><br>
+      <strong>Estimert effekt:</strong> ${effect}<br>
+      <strong>Anbefalt ekstra varighet:</strong> ca ${extraTime} minutter ekstra for best infusjon.<br>
+      <div style="margin-top:8px;"><em>${quote}</em></div>
+    `;
+
 
   // === PURPLE HAZE MODE ===
 document.querySelectorAll('.weed, .weed-right, .quote-weed').forEach(el => {
