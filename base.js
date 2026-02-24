@@ -850,7 +850,7 @@ function setupMassImportButton() {
     const btn = document.createElement("button");
     btn.id = "massImportBtn";
     btn.textContent = "klarna moment";
-    btn.style.marginLeft="10px";
+    btn.style.marginLeft = "5px";
     btn.addEventListener("click", massImportCSV);
 
     const existingExportBtn = document.getElementById("exportBtn");
