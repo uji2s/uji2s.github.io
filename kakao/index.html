@@ -1,3 +1,5 @@
+  <!-- Bong-lyd for trippy effekt -->
+  <audio id="bongSound" src="bong.mp3" preload="auto"></audio>
 
 <!DOCTYPE html>
 <html lang="no">
@@ -332,6 +334,12 @@ function chooseQuote() {
 }
 
 function calculateTHC() {
+  // Spill bong-lyd
+  var bong = document.getElementById('bongSound');
+  if (bong) {
+    bong.currentTime = 0;
+    bong.play().catch(() => {});
+  }
   const grams = parseFloat(document.getElementById('grams').value) || 0;
   const consistency = parseFloat(document.getElementById('consistency').value) || 1;
   const cups = Math.max(1, parseInt(document.getElementById('cups').value) || 1);
