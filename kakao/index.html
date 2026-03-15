@@ -1,5 +1,6 @@
   <!-- Bong-lyd for trippy effekt -->
   <audio id="bongSound" src="bong.mp3" preload="auto"></audio>
+  <audio id="sixSevenSound" src="67.mp3" preload="auto"></audio>
 
 <!DOCTYPE html>
 <html lang="no">
@@ -500,6 +501,19 @@ document.getElementById('result').style.display = 'block';
     weedRainBg.innerHTML = '';
     weedRainBg.style.display = 'none';
   }
+
+// === SIX SEVEN MODE ===
+const sixSevenSound = document.getElementById('sixSevenSound');
+
+// gjør tallet om til string uten punktum
+const thcString = thcPerCup.toString().replace('.', '');
+
+if (thcString.includes('67')) {
+  if (sixSevenSound) {
+    sixSevenSound.currentTime = 0;
+    sixSevenSound.play().catch(() => {});
+  }
+}
 
   // vis result (kun én boks)
   document.getElementById('result').style.display = 'block';
