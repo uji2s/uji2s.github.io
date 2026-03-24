@@ -640,34 +640,91 @@ function showUpdateBanner() {
   document.body.appendChild(banner);
 }
 
-// --- Base64 eksport / import (Unicode-sikker) ---
+// --- Kompakt binær pakking for eksport/import ---
+// Format per entry: [day(1), month(1), year-2000(1), amount*100 int32BE(4), descLen(1), desc(N)]
+// ~78% kortere enn JSON+base64
+
+const PACK_EPOCH = 2000;
+
+function packEntries(entries) {
+    const parts = [];
+    const enc = new TextEncoder();
+    for (const e of entries) {
+        const d = e.date instanceof Date ? e.date : new Date(e.date);
+        const descBytes = enc.encode(e.desc || "");
+        const buf = new Uint8Array(8 + descBytes.length);
+        buf[0] = d.getDate();
+        buf[1] = d.getMonth();        // 0-11
+        buf[2] = d.getFullYear() - PACK_EPOCH;
+        const af = Math.round(Number(e.amount) * 100); // fixed-point cents
+        buf[3] = (af >>> 24) & 0xff;
+        buf[4] = (af >>> 16) & 0xff;
+        buf[5] = (af >>> 8)  & 0xff;
+        buf[6] = af & 0xff;
+        buf[7] = descBytes.length;
+        buf.set(descBytes, 8);
+        parts.push(buf);
+    }
+    const total = parts.reduce((a, b) => a + b.length, 0);
+    const out = new Uint8Array(total);
+    let off = 0;
+    for (const p of parts) { out.set(p, off); off += p.length; }
+    return out;
+}
+
+function unpackEntries(bytes) {
+    const result = [];
+    const dec = new TextDecoder();
+    let i = 0;
+    while (i < bytes.length) {
+        if (i + 8 > bytes.length) break; // guard against corrupt data
+        const day   = bytes[i];
+        const month = bytes[i + 1];
+        const year  = bytes[i + 2] + PACK_EPOCH;
+        // Reinterpret 4 bytes as signed int32
+        const af = (bytes[i+3] << 24) | (bytes[i+4] << 16) | (bytes[i+5] << 8) | bytes[i+6];
+        const amount = af / 100;
+        const descLen = bytes[i + 7];
+        if (i + 8 + descLen > bytes.length) break; // guard
+        const desc = dec.decode(bytes.slice(i + 8, i + 8 + descLen));
+        result.push({ desc, amount, date: new Date(year, month, day) });
+        i += 8 + descLen;
+    }
+    return result;
+}
+
+function encodeToString(bytes) {
+    let s = "";
+    for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s);
+}
+
+function decodeFromString(str) {
+    const bin = atob(str);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+
+// --- Eksport ---
 function exportEntriesToBase64() {
-    if(entries.length === 0){
+    if (entries.length === 0) {
         alert("Ingen oppføringer å eksportere.");
         return;
     }
 
-    const dataStr = JSON.stringify(
-        entries.map(e => ({
-            ...e,
-            date: e.date instanceof Date ? e.date.toISOString() : e.date
-        }))
-    );
+    const packed = encodeToString(packEntries(entries));
 
-    const uint8array = new TextEncoder().encode(dataStr);
-    const b64 = btoa(String.fromCharCode(...uint8array));
-
-    // 🔥 AUTOKOPIER TIL CLIPBOARD (iOS Safari-safe)
     if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(b64).then(() => {
-            alert("Base64 kopiert til utklippstavlen");
+        navigator.clipboard.writeText(packed).then(() => {
+            alert(`Kopiert til utklippstavlen (${packed.length} tegn)`);
         }).catch(() => {
-            legacy_copy(b64);
-            alert("Base64 kopiert til utklippstavlen");
+            legacy_copy(packed);
+            alert(`Kopiert til utklippstavlen (${packed.length} tegn)`);
         });
     } else {
-        legacy_copy(b64);
-        alert("Base64 kopiert til utklippstavlen");
+        legacy_copy(packed);
+        alert(`Kopiert til utklippstavlen (${packed.length} tegn)`);
     }
 }
 
@@ -675,10 +732,7 @@ function exportEntriesToBase64() {
 function legacy_copy(text) {
     const ta = document.createElement("textarea");
     ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.top = "0";
-    ta.style.left = "0";
-    ta.style.opacity = "0";
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
     document.body.appendChild(ta);
     ta.focus();
     ta.select();
@@ -686,92 +740,61 @@ function legacy_copy(text) {
     document.body.removeChild(ta);
 }
 
+// --- Import ---
 function importEntriesFromBase64() {
-    let input;
-    if(window.innerWidth <= 768){ // mobil
+    if (window.innerWidth <= 768) { // mobil
         const ta = document.createElement("textarea");
-        ta.placeholder = "Lim inn Base64-strengen her";
-        ta.style.width="90%";
-        ta.style.height="100px";
-        ta.style.display="block";
-        ta.style.margin="10px auto";
+        ta.placeholder = "Lim inn eksportstrengen her";
+        ta.style.cssText = "width:90%;height:100px;display:block;margin:10px auto";
         document.body.appendChild(ta);
         ta.focus();
 
         const btn = document.createElement("button");
-        btn.textContent="Importer";
-        btn.style.display="block";
-        btn.style.margin="10px auto";
+        btn.textContent = "Importer";
+        btn.style.cssText = "display:block;margin:10px auto";
         document.body.appendChild(btn);
 
-        btn.addEventListener("click", ()=>{
-            input = ta.value.trim();
+        btn.addEventListener("click", () => {
+            const val = ta.value.trim();
             ta.remove();
             btn.remove();
-            if(!input) return;
-            tryImport(input);
+            if (val) tryImport(val);
         });
-
-    } else { // desktop
-        input = prompt("Lim inn Base64-strengen her:");
-        if(!input) return;
-        tryImport(input);
+    } else {
+        const val = prompt("Lim inn eksportstrengen her:");
+        if (val) tryImport(val.trim());
     }
 
-    function tryImport(str){
-        try{
-            const binaryStr = atob(str);
-            const uint8 = Uint8Array.from(binaryStr, c=>c.charCodeAt(0));
-            const jsonStr = new TextDecoder().decode(uint8);
-            const parsed = JSON.parse(jsonStr);
-            if(!Array.isArray(parsed)) throw new Error("Ugyldig format");
+    function tryImport(str) {
+        try {
+            // støtter både ny kompakt og gammel JSON-base64
+            let imported;
+            try {
+                imported = unpackEntries(decodeFromString(str));
+                if (imported.length === 0) throw new Error("tom");
+            } catch {
+                // prøv gammelt JSON-format som fallback
+                const binaryStr = atob(str);
+                const uint8 = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
+                const jsonStr = new TextDecoder().decode(uint8);
+                const parsed = JSON.parse(jsonStr);
+                if (!Array.isArray(parsed)) throw new Error("Ugyldig format");
+                imported = parsed.map(e => ({ ...e, date: e.date ? new Date(e.date) : new Date() }));
+            }
 
-            entries = parsed.map(e=>({...e,date:e.date?new Date(e.date):new Date()}));
+            entries = imported;
             saveStorage();
             renderEntries();
             updateSluttsum();
             updateDetailedView();
-            alert("Import fullført!");
-        } catch(err){
+            alert(`Import fullført! ${entries.length} oppføringer lastet inn.`);
+        } catch (err) {
             console.error(err);
-            alert("Kunne ikke importere, sjekk at Base64-strengen er korrekt og komplett.");
+            alert("Kunne ikke importere — sjekk at strengen er komplett og korrekt.");
         }
     }
 }
 
-
-// --- Opprett Base64-knapper på alle enheter ---
-function setupBase64Buttons() {
-    // sjekk om knappene allerede finnes
-    if(document.getElementById("exportBase64Btn")) return;
-
-    const btnExport = document.createElement("button");
-    btnExport.id = "exportBase64Btn";
-    btnExport.textContent = "eksporter liste";
-    btnExport.style.marginLeft = "10px"; 
-    btnExport.addEventListener("click", exportEntriesToBase64);
-
-    const btnImport = document.createElement("button");
-    btnImport.id = "importBase64Btn";
-    btnImport.textContent = "importer liste";
-    btnImport.style.marginLeft = "5px";
-    btnImport.addEventListener("click", importEntriesFromBase64);
-
-    // Sett knappene på linje med eksisterende eksportknapp hvis den finnes
-    const existingExportBtn = document.getElementById("exportBtn");
-    if(existingExportBtn){
-        existingExportBtn.insertAdjacentElement('afterend', btnImport);
-        existingExportBtn.insertAdjacentElement('afterend', btnExport);
-    } else {
-        // Hvis ikke desktop eksport finnes (mobil), legg knappene over tabellen
-        tableEl?.parentElement?.insertBefore(btnExport, tableEl);
-        tableEl?.parentElement?.insertBefore(btnImport, tableEl);
-    }
-}
-
-// --- Init Base64-knapper ---
-setupBase64Buttons();
-window.addEventListener("resize", setupBase64Buttons);
 
 // --- Mass import fra CSV-format (navn,sum,dato) ---
 function massImportCSV() {
@@ -843,27 +866,42 @@ function massImportCSV() {
     }
 }
 
-// --- Legg til knapp for mass import ---
-function setupMassImportButton() {
-    if(document.getElementById("massImportBtn")) return;
+// --- Alle handlingsknapper i én felles flex-container ---
+function setupActionButtons() {
+    if (document.getElementById("actionBtnRow")) return;
 
-    const btn = document.createElement("button");
-    btn.id = "massImportBtn";
-    btn.textContent = "klarna moment";
-    btn.style.marginLeft = "5px";
-    btn.addEventListener("click", massImportCSV);
+    const row = document.createElement("div");
+    row.id = "actionBtnRow";
+    row.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0;";
+
+    const btnExport = document.createElement("button");
+    btnExport.id = "exportBase64Btn";
+    btnExport.textContent = "eksporter liste";
+    btnExport.addEventListener("click", exportEntriesToBase64);
+
+    const btnImport = document.createElement("button");
+    btnImport.id = "importBase64Btn";
+    btnImport.textContent = "importer liste";
+    btnImport.addEventListener("click", importEntriesFromBase64);
+
+    const btnMass = document.createElement("button");
+    btnMass.id = "massImportBtn";
+    btnMass.textContent = "klarna moment";
+    btnMass.addEventListener("click", massImportCSV);
+
+    row.appendChild(btnExport);
+    row.appendChild(btnImport);
+    row.appendChild(btnMass);
 
     const existingExportBtn = document.getElementById("exportBtn");
-    if(existingExportBtn){
-        existingExportBtn.insertAdjacentElement('afterend', btn);
+    if (existingExportBtn) {
+        existingExportBtn.insertAdjacentElement("afterend", row);
     } else {
-        tableEl?.parentElement?.insertBefore(btn, tableEl);
+        tableEl?.parentElement?.insertBefore(row, tableEl);
     }
 }
 
-// --- Init mass import knapp ---
-setupMassImportButton();
-window.addEventListener("resize", setupMassImportButton);
+setupActionButtons();
 
 // --- Init ---
 renderEntries();
